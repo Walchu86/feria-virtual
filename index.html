@@ -63,6 +63,7 @@
     <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
     <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
+    <div class="mt-2"><a href="#/admin" class="text-[11px] text-slate-400 underline">🔒 Acceso Superadministrador</a></div>
   </footer>
 
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center shadow-lg text-sm"></div>
@@ -250,7 +251,7 @@
                 <p class="text-xs text-slate-500 truncate">${h(s.description || 'Ver productos →')}</p>
               </div>
               <span class="text-slate-400 font-bold text-lg pr-1">›</span>
-            </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No hay stands activos todavía. Aprobálos desde tu panel de administración.</p>'}
+            </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No hay stands activos todavía. Aprobálos desde el panel de administración (#/admin).</p>'}
         </div>
 
         <div class="card mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
@@ -520,7 +521,7 @@
           email: f.email,
           password: f.password,
           color: '#ff5a36',
-          active: false, // <--- Mantenido en false como pediste (requiere aprobación en admin)
+          active: false,
           receipt: receiptUrl,
           logo: logoUrl,
           created: Date.now()
@@ -534,7 +535,7 @@
           <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
             <div class="text-6xl">⏳</div>
             <h1 class="disp text-2xl font-extrabold">¡Stand Creado con Éxito!</h1>
-            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifiques en tu panel, se activará en la feria.</p>
+            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación. Podés aprobarlo ingresando al panel de administración.</p>
             <button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al Inicio</button>
           </div>`;
       } else {
@@ -555,6 +556,150 @@
       toast('Sesión cerrada');
     };
 
+    // --- PANEL SUPERADMIN (UNIFICADO Y SEGURO) ---
+    let adminLogged = localStorage.getItem('fv_admin_logged') === 'true';
+    let adminTab = 'stands';
+
+    function adminLoginView(err) {
+      return `
+        <form class="card max-w-md mx-auto space-y-4 shadow-xl mt-6 text-left" onsubmit="handleAdminLogin(event)">
+          <h1 class="disp text-xl sm:text-2xl font-extrabold text-center">🔒 Superadministrador</h1>
+          ${err ? `<p class="text-red-600 font-bold text-sm">${err}</p>` : ''}
+          <input class="inp text-sm" name="user" placeholder="Usuario (walchu86)" required>
+          <input class="inp text-sm" name="pass" type="password" placeholder="Contraseña (pancha2026)" required>
+          <button class="btn text-base py-3">Ingresar al Panel</button>
+        </form>`;
+    }
+
+    window.handleAdminLogin = e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      if (f.user === 'walchu86' && f.pass === 'pancha2026') {
+        adminLogged = true;
+        localStorage.setItem('fv_admin_logged', 'true');
+        toast('¡Bienvenido Walchu!');
+        route();
+      } else {
+        app.innerHTML = adminLoginView('Usuario o contraseña incorrectos.');
+      }
+    };
+
+    window.adminLogout = () => {
+      adminLogged = false;
+      localStorage.removeItem('fv_admin_logged');
+      route();
+      toast('Sesión de admin cerrada');
+    };
+
+    window.toggleStandActive = id => {
+      const stands = DB.getStands();
+      const s = stands.find(x => x.id === id);
+      if (s) {
+        s.active = !s.active;
+        DB.saveStands(stands);
+        toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
+        route();
+      }
+    };
+
+    window.deleteStand = id => {
+      if (!confirm('¿Eliminar este stand por completo?')) return;
+      DB.saveStands(DB.getStands().filter(s => s.id !== id));
+      toast('Stand eliminado');
+      route();
+    };
+
+    window.exportCSV = () => {
+      const orders = DB.getOrders();
+      let csv = 'ID Pedido,Comprador,WhatsApp,Total,Estado\n';
+      orders.forEach(o => {
+        csv += `${o.id},"${o.buyer.name}","${o.buyer.phone}",${o.total},${o.delivered?'Entregado':'Pendiente'}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_ventas_feria_${Date.now()}.csv`;
+      a.click();
+      toast('Reporte CSV descargado con éxito');
+    };
+
+    function adminDashboardView() {
+      if (!adminLogged) return adminLoginView();
+
+      const stands = DB.getStands();
+      const products = DB.getProducts();
+      const orders = DB.getOrders();
+      const totalVentas = orders.reduce((acc, o) => acc + o.total, 0);
+      const totalComisiones = totalVentas * 0.05;
+
+      let content = '';
+      if (adminTab === 'stands') {
+        content = `
+          <div class="card overflow-x-auto text-left">
+            <h3 class="disp text-lg sm:text-xl font-bold mb-3">🏪 Gestión de Stands (${stands.length})</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs sm:text-sm min-w-[600px]">
+                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto</th><th class="p-2">Comprobante</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
+                ${stands.length ? stands.map(s => `
+                  <tr>
+                    <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-500">${h(s.email)}</span></td>
+                    <td class="p-2">${h(s.rubro)}</td>
+                    <td class="p-2"><a class="underline" href="https://wa.me/${s.phone}" target="_blank">${s.phone}</a></td>
+                    <td class="p-2">${s.receipt ? `<a href="${h(s.receipt)}" target="_blank" class="text-blue-600 font-bold underline">Ver Comprobante</a>` : '—'}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
+                    <td class="p-2 space-x-1">
+                      <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
+                      <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
+                    </td>
+                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay stands registrados.</td></tr>'}
+              </table>
+            </div>
+          </div>`;
+      } else if (adminTab === 'orders') {
+        content = `
+          <div class="card overflow-x-auto text-left">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+              <h3 class="disp text-lg sm:text-xl font-bold">🧾 Pedidos y Comisiones (${orders.length})</h3>
+              <button class="btn2 text-xs py-1.5 px-3 w-full sm:w-auto" onclick="exportCSV()">📥 Descargar Reporte CSV</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs sm:text-sm min-w-[600px]">
+                <tr><th class="p-2">N°</th><th class="p-2">Fecha</th><th class="p-2">Comprador</th><th class="p-2">Detalle</th><th class="p-2">Total</th><th class="p-2">Estado</th></tr>
+                ${orders.length ? orders.map(o => `
+                  <tr>
+                    <td class="p-2">#${o.id}</td>
+                    <td class="p-2">${new Date(o.date).toLocaleString('es-AR')}</td>
+                    <td class="p-2"><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
+                    <td class="p-2">${o.cart.map(i=>`${i.qty}x ${i.name} (${i.standName})`).join(', ')}</td>
+                    <td class="p-2"><b>${money(o.total)}</b></td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
+                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay pedidos registrados.</td></tr>'}
+              </table>
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="disp text-2xl font-extrabold">🔒 Panel Superadmin</h1>
+          <button class="btn2 text-xs py-1.5 px-3 !bg-slate-200 !text-[#10263a]" onclick="adminLogout()">Cerrar Admin</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+          <div class="card !p-3"><p class="text-[11px] text-slate-500">Stands Totales</p><p class="disp text-xl font-extrabold">${stands.length}</p></div>
+          <div class="card !p-3"><p class="text-[11px] text-slate-500">Pendientes</p><p class="disp text-xl font-extrabold text-amber-600">${stands.filter(s=>!s.active).length}</p></div>
+          <div class="card !p-3"><p class="text-[11px] text-slate-500">Productos</p><p class="disp text-xl font-extrabold">${products.length}</p></div>
+          <div class="card !p-3"><p class="text-[11px] text-slate-500">Ventas Totales</p><p class="disp text-xl font-extrabold">${money(totalVentas)}</p></div>
+          <div class="card !p-3 border-2 border-[#ff5a36] col-span-2 sm:col-span-1"><p class="text-[11px] text-slate-500">Tu Comisión (5%)</p><p class="disp text-xl font-extrabold text-[#ff5a36]">${money(totalComisiones)}</p></div>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2" onclick="adminTab='stands'; route();">🏪 Stands</button>
+          <button class="${adminTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2" onclick="adminTab='orders'; route();">🧾 Pedidos y Comisiones</button>
+        </div>
+        ${content}`;
+    }
+
+    // --- PANEL DEL VENDEROR ---
     let vendorTab = 'products';
     let editingProdId = null;
 
@@ -811,6 +956,7 @@
       }
     };
 
+    // --- ENRUTADOR PRINCIPAL ---
     async function route() {
       const hash = location.hash || '#/';
       const [path, arg] = hash.replace(/^#\/?/, '').split('/');
@@ -823,6 +969,7 @@
         else if (path === 'checkout') html = checkoutView();
         else if (path === 'ingresar' || path === 'registro') html = authView(path === 'registro');
         else if (path === 'panel') html = await panelView();
+        else if (path === 'admin') html = adminDashboardView();
         else html = await homeView();
         app.innerHTML = html;
       } catch (err) {
