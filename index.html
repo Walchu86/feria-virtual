@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feria Virtual</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎪%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; }
+    h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
+    .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 12px; background: #fff; }
+    .inp:focus { outline: 3px solid #ff5a36; border-color: #ff5a36; }
+    .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
+    .btn:hover { background: #e84823; }
+    .btn:disabled { opacity: .6; cursor: wait; }
+    .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
+    .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; }
+    .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 0 #c5d8dc; }
+    .tile { aspect-ratio: 1; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .15s; cursor: pointer; text-decoration: none; }
+    .tile:hover { transform: translateY(-4px) rotate(-1deg); }
+    th { text-align: left; padding: 6px 8px; font-weight: 700; }
+    td { padding: 6px 8px; border-top: 1px solid #e4f0f1; vertical-align: top; }
+  </style>
+</head>
+<body>
+  <header class="bg-[#10263a] text-white sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      <a href="#/" class="flex items-center gap-2">
+        <span class="text-2xl">🎪</span>
+        <span class="disp font-extrabold text-xl">Feria Virtual</span>
+      </a>
+      <nav id="nav" class="flex items-center gap-1 text-sm font-bold"></nav>
+    </div>
+  </header>
+
+  <main id="app" class="max-w-6xl mx-auto px-4 py-6"><p class="card">Cargando…</p></main>
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center"></div>
+
+  <script>
+    // =====================================================================
+    //  1) PONÉ ACÁ TUS DATOS  (Supabase > Project Settings > API)
+    // =====================================================================
+    const SUPABASE_URL = 'https://jokcsrrtumjhafrxceru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_2_h0StPTl0-n44FU4FLu7Q_c_Fn23zr';
+    // Tu WhatsApp con código de país, sin + ni espacios (los feriantes te escriben acá)
+    const ADMIN_WHATSAPP = '5493794042319';
+    // =====================================================================
+
+    const $ = s => document.querySelector(s);
+    const app = $('#app');
+    const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    const final = p => Math.round(Number(p.price) * (1 - (Number(p.discount) || 0) / 100) * 100) / 100;
+    const col = c => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff5a36');
+    const toast = m => {
+      const t = $('#toast');
+      t.textContent = m;
+      t.classList.remove('hidden');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => t.classList.add('hidden'), 3500);
+    };
+    const waNum = t => {
+      let d = String(t || '').replace(/\D/g, '').replace(/^0+/, '');
+      if (d.startsWith('549')) return d;
+      if (d.startsWith('54')) return '549' + d.slice(2);
+      return '549' + d;
+    };
+    const wait = (p, ms = 15000) => Promise.race([
+      p,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('El servidor tardó demasiado en responder. Revisá tu internet e intentá de nuevo.')), ms))
+    ]);
+    const ok = r => {
+      if (r.error) throw new Error(r.error.message || 'Error');
+      return r.data;
+    };
+    const nice = m => {
+      m = String(m || '');
+      if (/Invalid login/i.test(m)) return 'Email o clave incorrectos.';
+      if (/already registered|already been registered/i.test(m)) return 'Ese email ya tiene cuenta. Ingresá con tu clave.';
+      if (/Email not confirmed/i.test(m)) return 'Tu email todavía no está confirmado. Revisá tu correo.';
+      if (/Password should be/i.test(m)) return 'La clave debe tener al menos 6 caracteres.';
+      if (/rate limit/i.test(m)) return 'Demasiados intentos. Esperá un minuto y probá de nuevo.';
+      if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'No hay conexión con el servidor. Revisá tu internet.';
+      if (/row-level security|permission denied/i.test(m)) return 'No tenés permiso para hacer esto. ¿Corriste el SQL en Supabase?';
+      return m || 'Ocurrió un error';
+    };
+    const act = fn => async (...a) => {
+      try { await fn(...a); } catch (e) { console.error(e); toast(nice(e.message)); }
+    };
+
+    // ---------- Supabase ----------
+    let sb = null;
+    try {
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      });
+    } catch (e) { console.error(e); }
+
+    // ---------- Estado ----------
+    let me = null;          // usuario con sesión (o null)
+    let cart = [];
+    try {
+      cart = JSON.parse(localStorage.getItem('feria_cart') || '[]');
+      if (!Array.isArray(cart)) cart = [];
+      cart = cart.filter(i => i && Number.isFinite(+i.id) && i.qty > 0 && Number.isFinite(+i.price));
+    } catch (e) { cart = []; }
+    const saveCart = () => {
+      try { localStorage.setItem('feria_cart', JSON.stringify(cart)); } catch (e) { /* sin storage */ }
+      renderNav();
+    };
+    let ptab = 'prod';      // pestaña del panel
+    let editing = null;     // producto que se está editando
+    let afterRender = null;
+
+    function renderNav() {
+      const n = cart.reduce((t, i) => t + i.qty, 0);
+      $('#nav').innerHTML =
+        `<button type="button" onclick="navigate('#/carrito')" class="px-3 py-2 rounded-xl bg-white/10">Carrito (${n})</button>` +
+        (me
+          ? `<button type="button" onclick="navigate('#/panel')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Mi stand</button>
+             <button type="button" onclick="logout()" class="px-3 py-2">Salir</button>`
+          : `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>
+             <button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`);
+    }
+
+    window.navigate = path => {
+      if (location.hash === path) route();
+      else location.hash = path;
+    };
+    const redirect = path => { location.replace(location.pathname + location.search + path); };
+
+    // ======================= VISTAS PÚBLICAS =======================
+    const notFound = (msg = 'No encontramos lo que buscás.') =>
+      `<div class="card text-center"><div class="text-5xl mb-2">🤷</div><p class="mb-3">${h(msg)}</p><button type="button" class="btn" onclick="navigate('#/')">Volver a la feria</button></div>`;
+
+    const errorView = e =>
+      `<div class="card"><h1 class="text-xl font-extrabold mb-1">Ups, algo salió mal</h1><p class="mb-3">${h(nice(e.message))}</p><button type="button" class="btn" onclick="route()">Reintentar</button></div>`;
+
+    async function homeView() {
+      const stands = ok(await wait(sb.from('stands').select('id,name,rubro,description,color').eq('active', true).order('id')));
+      return `
+        <section class="rounded-3xl bg-[#10263a] text-white p-6 md:p-10 mb-6">
+          <h1 class="text-3xl md:text-5xl font-extrabold">Feria Virtual</h1>
+          <p class="mt-2 max-w-xl">Elegí un stand, mirá los productos y hacé tu pedido: lo coordinás directo con el vendedor por WhatsApp.</p>
+        </section>
+        <h2 class="text-2xl font-extrabold mb-3">Stands</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          ${stands.length ? stands.map(s => `
+            <a class="tile" style="background:${col(s.color)}" href="#/stand/${s.id}">
+              <span class="text-4xl">🏪</span>
+              <b class="disp text-lg leading-tight">${h(s.name)}</b>
+              <span class="text-sm opacity-90">${h(s.rubro)}</span>
+            </a>`).join('') : '<p class="card col-span-full">Todavía no hay stands publicados. ¡Pronto vas a ver los primeros!</p>'}
+        </div>
+        <div class="card mt-8 flex flex-wrap items-center justify-between gap-3">
+          <div><b>¿Tenés un emprendimiento?</b><br>Abrí tu stand y vendé en la feria.</div>
+          <button type="button" class="btn" onclick="navigate('#/registro')">Crear mi stand</button>
+        </div>`;
+    }
+
+    async function standView(id) {
+      if (!Number.isInteger(id) || id < 1) return notFound();
+      const s = ok(await wait(sb.from('stands').select('id,name,rubro,description,color,phone').eq('id', id).eq('active', true).maybeSingle()));
+      if (!s) return notFound('Este stand no existe o todavía no está publicado.');
+      const products = ok(await wait(sb.from('products').select('id,name,category,description,price,discount,image').eq('stand_id', id).eq('active', true).order('id', { ascending: false })));
+      window._sv = { stand: s, products };
+      return `
+        <div class="rounded-3xl p-6 mb-5 text-white" style="background:${col(s.color)}">
+          <button type="button" class="underline text-sm mb-2" onclick="navigate('#/')">← Todos los stands</button>
+          <h1 class="text-3xl font-extrabold">${h(s.name)}</h1>
+          <p class="opacity-90">${h(s.rubro)}</p>
+          ${s.description ? `<p class="text-sm opacity-90 mt-1">${h(s.description)}</p>` : ''}
+          ${s.phone ? `<a class="inline-block mt-2 bg-white/20 rounded-xl px-3 py-1 text-sm font-bold" href="https://wa.me/${waNum(s.phone)}" target="_blank" rel="noopener">💬 Escribirle por WhatsApp</a>` : ''}
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          ${products.map(p => `
+            <div class="card !p-0 overflow-hidden flex flex-col">
+              <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+                ${p.image ? `<img src="${h(p.image)}" alt="" loading="lazy" class="w-full h-full object-cover">` : '<span class="text-5xl">📦</span>'}
+              </div>
+              <div class="p-3 flex-1 flex flex-col gap-1">
+                ${p.category ? `<span class="text-xs font-bold text-slate-500 uppercase">${h(p.category)}</span>` : ''}
+                <b class="leading-tight">${h(p.name)}</b>
+                ${p.description ? `<p class="text-sm text-slate-500 line-clamp-2">${h(p.description)}</p>` : ''}
+                <div class="mt-1">
+                  ${p.discount > 0 ? `<s class="text-slate-400 text-sm">${money(p.price)}</s> <span class="text-green-700 font-bold text-sm">${p.discount}% OFF</span><br>` : ''}
+                  <b class="disp text-2xl">${money(final(p))}</b>
+                </div>
+                <button type="button" class="btn mt-auto" onclick="addCart(${p.id})">Agregar</button>
+              </div>
+            </div>`).join('') || '<p class="card col-span-full">Este stand todavía no cargó productos.</p>'}
+        </div>`;
+    }
+
+    window.addCart = id => {
+      const sv = window._sv;
+      const p = sv && sv.products.find(x => x.id === id);
+      if (!p) return toast('No pude agregar el producto. Recargá la página.');
+      const i = cart.find(x => x.id === id);
+      if (i) i.qty = Math.min(50, i.qty + 1);
+      else cart.push({ id, name: p.name, price: final(p), image: p.image || '', stand: sv.stand.name, standId: sv.stand.id, qty: 1 });
+      saveCart();
+      toast('Agregado al carrito 🛒');
+    };
+    window.chgQty = (id, d) => {
+      const i = cart.find(x => x.id === id);
+      if (!i) return;
+      i.qty = Math.min(50, i.qty + d);
+      if (i.qty < 1) cart = cart.filter(x => x !== i);
+      saveCart();
+      route();
+    };
+    window.rmCart = id => {
+      cart = cart.filter(x => x.id !== id);
+      saveCart();
+      route();
+    };
+
+    function cartView() {
+      if (!cart.length) {
+        return `<div class="card text-center"><div class="text-5xl mb-2">🛒</div><h1 class="text-xl font-extrabold mb-3">Tu carrito está vacío</h1><button type="button" class="btn" onclick="navigate('#/')">Ver los stands</button></div>`;
+      }
+      const by = {};
+      cart.forEach(i => (by[i.standId] ??= { name: i.stand, items: [] }).items.push(i));
+      const total = cart.reduce((t, i) => t + i.price * i.qty, 0);
+      return `
+        <h1 class="text-3xl font-extrabold mb-4">Tu carrito</h1>
+        <div class="grid md:grid-cols-2 gap-4 items-start">
+          <div class="space-y-3">
+            ${Object.values(by).map(g => `
+              <div class="card">
+                <h2 class="font-extrabold mb-2">🏪 ${h(g.name)}</h2>
+                ${g.items.map(i => `
+                  <div class="flex items-center gap-3 py-2 border-t border-[#e4f0f1]">
+                    <div class="w-14 h-14 shrink-0 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">${i.image ? `<img src="${h(i.image)}" alt="" class="w-full h-full object-cover">` : '📦'}</div>
+                    <div class="flex-1 min-w-0">
+                      <b class="block leading-tight">${h(i.name)}</b>
+                      <span class="text-sm">${money(i.price)} c/u</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <button type="button" class="btn2 !px-3 !py-1" onclick="chgQty(${i.id}, -1)" aria-label="Menos">−</button>
+                      <b class="w-6 text-center">${i.qty}</b>
+                      <button type="button" class="btn2 !px-3 !py-1" onclick="chgQty(${i.id}, 1)" aria-label="Más">+</button>
+                    </div>
+                    <b class="w-20 text-right">${money(i.price * i.qty)}</b>
+                    <button type="button" class="text-red-600 font-bold" onclick="rmCart(${i.id})" aria-label="Quitar">✕</button>
+                  </div>`).join('')}
+              </div>`).join('')}
+            <div class="card flex justify-between items-center"><span class="font-bold">Total</span><b class="disp text-2xl">${money(total)}</b></div>
+          </div>
+          <form class="card space-y-3" onsubmit="placeOrder(event)">
+            <h2 class="font-extrabold text-xl">Tus datos</h2>
+            <input class="inp" name="name" placeholder="Nombre y apellido" required maxlength="80">
+            <input class="inp" name="phone" type="tel" inputmode="tel" placeholder="Tu WhatsApp (con código de área)" required maxlength="30">
+            <textarea class="inp" name="notes" rows="3" maxlength="500" placeholder="Notas de entrega (dirección, horario, cómo preferís pagar...)"></textarea>
+            <button id="orderBtn" class="btn w-full text-lg">Confirmar pedido</button>
+            <p class="text-xs text-slate-500">Guardamos tu pedido y después te mostramos un botón para enviárselo por WhatsApp a cada vendedor. El pago y la entrega los coordinás directo con ellos.</p>
+          </form>
+        </div>`;
+    }
+
+    const waMsg = (orderId, s, b) =>
+      `Hola ${s.name}! Soy ${b.name}. Hice el pedido #${orderId} en la Feria Virtual:\n\n` +
+      s.items.map(i => `• ${i.qty}x ${i.name} — ${money(i.subtotal)}`).join('\n') +
+      `\n\nTotal: ${money(s.total)}` +
+      (b.notes ? `\nNotas de entrega: ${b.notes}` : '') +
+      `\nMi WhatsApp: ${b.phone}\n\n¿Cómo coordinamos el pago y la entrega?`;
+
+    function orderDone(r, b) {
+      renderId++; // cancela cualquier render pendiente
+      app.innerHTML = `
+        <div class="card max-w-lg mx-auto">
+          <div class="text-5xl text-center mb-2">🎉</div>
+          <h1 class="text-2xl font-extrabold text-center mb-1">¡Pedido #${r.order_id} guardado!</h1>
+          <p class="text-center mb-3">Total: <b>${money(r.total)}</b>. Ahora mandale el pedido a cada vendedor por WhatsApp para coordinar el pago y la entrega:</p>
+          ${(r.stands || []).map(s => `
+            <div class="flex items-center justify-between gap-3 py-3 border-t border-[#e4f0f1]">
+              <div><b>${h(s.name)}</b><br><span class="text-sm">${money(s.total)} · ${s.items.length} producto(s)</span></div>
+              ${s.phone
+                ? `<a class="btnwa" target="_blank" rel="noopener" href="https://wa.me/${waNum(s.phone)}?text=${encodeURIComponent(waMsg(r.order_id, s, b))}">Enviar por WhatsApp</a>`
+                : '<span class="text-sm text-slate-500">Sin WhatsApp cargado. El vendedor ya ve tu pedido en su panel.</span>'}
+            </div>`).join('')}
+          <button type="button" class="btn2 w-full mt-4" onclick="navigate('#/')">Volver a la feria</button>
+        </div>`;
+      window.scrollTo(0, 0);
+    }
+
+    window.placeOrder = act(async e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const buyer = { name: String(f.name || '').trim(), phone: String(f.phone || '').trim(), notes: String(f.notes || '').trim() };
+      if (!buyer.name || !buyer.phone) throw new Error('Completá tu nombre y tu WhatsApp');
+      const btn = $('#orderBtn');
+      btn.disabled = true;
+      btn.textContent = 'Guardando…';
+      try {
+        const r = ok(await wait(sb.rpc('create_cash_order', {
+          p_items: cart.map(i => ({ productId: i.id, qty: i.qty })),
+          p_buyer: buyer
+        })));
+        cart = [];
+        saveCart();
+        orderDone(r, buyer);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Confirmar pedido';
+        throw err;
+      }
+    });
+
+    // ======================= CUENTA =======================
+    function authView(reg) {
+      return `
+        <form class="card max-w-xl mx-auto grid md:grid-cols-2 gap-3" onsubmit="doAuth(event, ${reg})">
+          <h1 class="md:col-span-2 text-2xl font-extrabold">${reg ? 'Abrí tu stand' : 'Ingresar a mi stand'}</h1>
+          ${reg ? `
+            <p class="md:col-span-2 bg-[#e4f0f1] rounded-xl p-3 text-sm">Completá los datos de tu negocio. Para comprar en la feria <b>no hace falta</b> tener cuenta.</p>
+            <input class="inp" name="name" placeholder="Nombre de tu negocio" required maxlength="60">
+            <input class="inp" name="rubro" placeholder="Rubro (ej: Panadería, Ropa)" required maxlength="40">
+            <input class="inp" name="phone" type="tel" inputmode="tel" placeholder="WhatsApp (con código de área)" required maxlength="30">
+            <textarea class="inp" name="description" placeholder="Contá en pocas palabras qué vendés" maxlength="300"></textarea>` : ''}
+          <input class="inp" type="email" name="email" placeholder="Email" required autocomplete="email">
+          <input class="inp" type="password" name="password" placeholder="Clave (mínimo 6 caracteres)" required minlength="6" autocomplete="${reg ? 'new-password' : 'current-password'}">
+          <button id="authBtn" class="btn md:col-span-2">${reg ? 'Crear mi stand' : 'Entrar'}</button>
+          <button type="button" class="md:col-span-2 block w-full text-center underline" onclick="navigate('#/${reg ? 'ingresar' : 'registro'}')">${reg ? 'Ya tengo cuenta' : 'Quiero abrir un stand'}</button>
+        </form>`;
+    }
+
+    // Devuelve el stand del usuario; si todavía no existe, lo crea.
+    async function myStand(extra = {}) {
+      let r = await wait(sb.from('stands').select('*').eq('user_id', me.id).maybeSingle());
+      if (r.error) throw new Error(r.error.message);
+      if (!r.data) {
+        const m = me.user_metadata || {};
+        ok(await wait(sb.rpc('ensure_my_stand', {
+          p_name: extra.name || m.name || 'Mi negocio',
+          p_rubro: extra.rubro || m.rubro || '',
+          p_phone: extra.phone || m.phone || '',
+          p_description: extra.description || ''
+        })));
+        r = await wait(sb.from('stands').select('*').eq('user_id', me.id).single());
+      }
+      return ok(r);
+    }
+
+    window.doAuth = act(async (e, reg) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const email = String(f.email || '').trim();
+      const btn = $('#authBtn');
+      btn.disabled = true;
+      try {
+        if (reg) {
+          const meta = { name: f.name, rubro: f.rubro, phone: f.phone };
+          const r = await wait(sb.auth.signUp({ email, password: f.password, options: { data: meta } }));
+          if (r.error) throw r.error;
+          let session = r.data.session;
+          if (!session) { // Supabase no devolvió sesión: probamos entrar directo
+            const l = await wait(sb.auth.signInWithPassword({ email, password: f.password }));
+            if (l.error) throw new Error('Tu cuenta se creó, pero Supabase pide confirmar el email. Revisá tu correo y después ingresá.');
+            session = l.data.session;
+          }
+          me = session.user;
+          renderNav();
+          await myStand({ name: f.name, rubro: f.rubro, phone: f.phone, description: f.description });
+        } else {
+          const r = await wait(sb.auth.signInWithPassword({ email, password: f.password }));
+          if (r.error) throw r.error;
+          me = r.data.session.user;
+          renderNav();
+        }
+        ptab = 'prod';
+        editing = null;
+        navigate('#/panel');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    window.logout = act(async () => {
+      me = null;
+      editing = null;
+      ptab = 'prod';
+      renderNav();
+      try { await wait(sb.auth.signOut({ scope: 'local' }), 5000); } catch (e) { console.warn(e); }
+      navigate('#/');
+    });
+
+    // ======================= PANEL DEL VENDEDOR =======================
+    async function panelView() {
+      const st = await myStand();
+      window._st = st;
+      const tabs = [['prod', '📦 Mis productos'], ['ped', '🧾 Pedidos'], ['neg', '⚙️ Mi stand']];
+      const waAdmin = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola! Mi stand "' + st.name + '" ya está listo. ¿Lo pueden activar?')}`;
+      const banner = st.active
+        ? `<div class="card mb-4 flex flex-wrap items-center justify-between gap-2">
+             <span>✅ Tu stand está <b>publicado</b> y los compradores ya lo ven.</span>
+             <button type="button" class="btn2" onclick="navigate('#/stand/${st.id}')">Ver mi stand</button>
+           </div>`
+        : `<div class="card mb-4 border-2 border-[#ff5a36]">
+             <b>⏳ Tu stand todavía no está publicado.</b>
+             <p class="text-sm my-1">Podés ir cargando tus productos. Cuando lo activemos aparece en la portada de la feria.</p>
+             <a class="btnwa !py-1 inline-block mt-1" href="${waAdmin}" target="_blank" rel="noopener">Pedir activación por WhatsApp</a>
+           </div>`;
+      let body = '';
+
+      if (ptab === 'prod') {
+        const ps = ok(await wait(sb.from('products').select('*').eq('stand_id', st.id).order('id', { ascending: false })));
+        window._ps = ps;
+        const e = (editing && ps.find(p => p.id === editing)) || {};
+        body = `
+          <form class="card mb-4 space-y-3" onsubmit="saveProd(event)">
+            <h2 class="font-extrabold text-xl">${e.id ? '✏️ Editar producto' : '➕ Publicar un producto'}</h2>
+            <label class="block cursor-pointer">
+              <div class="rounded-2xl border-4 border-dashed border-[#c5d8dc] bg-[#f3f9fa] flex items-center justify-center overflow-hidden" style="aspect-ratio:4/3">
+                <img id="prev" class="w-full h-full object-cover ${e.image ? '' : 'hidden'}" src="${h(e.image)}" alt="">
+                <div id="prevEmpty" class="text-center p-4 ${e.image ? 'hidden' : ''}">
+                  <div class="text-5xl">📷</div>
+                  <b>Tocá para sacar o elegir una foto</b>
+                  <p class="text-sm text-slate-500">Se achica sola para que suba rápido</p>
+                </div>
+              </div>
+              <input type="file" accept="image/*" class="hidden" onchange="upImg(this)">
+            </label>
+            <input type="hidden" name="image" value="${h(e.image)}">
+            <p id="upMsg" class="text-sm text-slate-500"></p>
+            <input class="inp text-lg" name="name" placeholder="¿Qué vendés? (ej: Alfajores x6)" value="${h(e.name)}" required maxlength="80">
+            <input class="inp" name="category" list="cats" placeholder="Categoría (ej: Comida, Ropa)" value="${h(e.category)}" maxlength="40">
+            <datalist id="cats"><option>Comida</option><option>Ropa</option><option>Calzado</option><option>Accesorios</option><option>Hogar</option><option>Artesanías</option><option>Belleza</option><option>Tecnología</option><option>Juguetes</option><option>Otros</option></datalist>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="text-sm font-bold">Precio ($)
+                <input class="inp mt-1 text-lg font-normal" name="price" type="number" inputmode="decimal" step="0.01" min="1" value="${e.price ?? ''}" required oninput="calcFinal(this.form)">
+              </label>
+              <label class="text-sm font-bold">Descuento % (opcional)
+                <input class="inp mt-1 text-lg font-normal" name="discount" type="number" inputmode="numeric" min="0" max="95" placeholder="0" value="${e.discount || ''}" oninput="calcFinal(this.form)">
+              </label>
+            </div>
+            <p id="finalPrev" class="rounded-xl bg-[#e4f0f1] p-3 text-sm"></p>
+            <textarea class="inp" rows="3" name="description" maxlength="400" placeholder="Descripción (medidas, sabores, colores...)">${h(e.description)}</textarea>
+            <div class="flex gap-2">
+              <button id="prodBtn" class="btn flex-1 text-lg">${e.id ? 'Guardar cambios' : 'Publicar producto'}</button>
+              ${e.id ? '<button type="button" class="btn2" onclick="editProd(null)">Cancelar</button>' : ''}
+            </div>
+          </form>
+          <h2 class="font-extrabold text-xl mb-2">Mis productos (${ps.length})</h2>
+          <div class="grid gap-3 md:grid-cols-2">
+            ${ps.map(p => `
+              <div class="card !p-3 flex gap-3 ${p.active ? '' : 'opacity-60'}">
+                <div class="w-24 h-24 shrink-0 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-3xl">
+                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover" alt="">` : '📦'}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <b class="block leading-tight">${h(p.name)}</b>
+                  <p>
+                    ${p.discount > 0 ? `<s class="text-slate-400 text-sm">${money(p.price)}</s> <span class="text-green-700 font-bold text-sm">-${p.discount}%</span><br>` : ''}
+                    <b class="text-lg">${money(final(p))}</b>
+                  </p>
+                  <p class="text-xs">${p.active ? '🟢 Visible' : '⏸️ Pausado'}</p>
+                  <div class="flex flex-wrap gap-x-3 text-sm mt-1">
+                    <button type="button" class="underline font-bold" onclick="editProd(${p.id})">Editar</button>
+                    <button type="button" class="underline" onclick="togProd(${p.id})">${p.active ? 'Pausar' : 'Activar'}</button>
+                    <button type="button" class="underline text-red-600" onclick="delProd(${p.id})">Borrar</button>
+                  </div>
+                </div>
+              </div>`).join('') || '<p class="card md:col-span-2">Todavía no cargaste productos. ¡Publicá el primero arriba!</p>'}
+          </div>`;
+        afterRender = () => { const f = document.querySelector('form[onsubmit="saveProd(event)"]'); if (f) calcFinal(f); };
+      }
+
+      if (ptab === 'ped') {
+        const rows = ok(await wait(sb.from('cash_order_items').select('*, cash_orders(buyer_name,buyer_phone,notes,created_at)').eq('stand_id', st.id).order('id', { ascending: false }).limit(300)));
+        const g = {};
+        rows.forEach(r => {
+          const o = g[r.order_id] ??= { id: r.order_id, o: r.cash_orders, items: [], total: 0 };
+          o.items.push(`${r.qty}x ${r.name}`);
+          o.total += Number(r.subtotal);
+        });
+        const orders = Object.values(g).sort((a, b) => b.id - a.id);
+        body = `
+          <div class="card overflow-x-auto">
+            <h2 class="font-extrabold text-xl mb-2">Pedidos recibidos</h2>
+            <table class="w-full text-sm">
+              <tr><th>N°</th><th>Fecha</th><th>Comprador</th><th>Pedido</th><th>Total</th></tr>
+              ${orders.map(o => `
+                <tr>
+                  <td>#${o.id}</td>
+                  <td>${o.o ? h(new Date(o.o.created_at).toLocaleString('es-AR')) : ''}</td>
+                  <td>${h(o.o?.buyer_name)}<br>${o.o?.buyer_phone ? `<a class="underline" target="_blank" rel="noopener" href="https://wa.me/${waNum(o.o.buyer_phone)}">${h(o.o.buyer_phone)}</a>` : ''}${o.o?.notes ? `<br><span class="text-slate-500">${h(o.o.notes)}</span>` : ''}</td>
+                  <td>${h(o.items.join(' | '))}</td>
+                  <td><b>${money(o.total)}</b></td>
+                </tr>`).join('') || '<tr><td colspan="5">Todavía no recibiste pedidos.</td></tr>'}
+            </table>
+          </div>`;
+      }
+
+      if (ptab === 'neg') {
+        body = `
+          <form class="card space-y-3 max-w-xl" onsubmit="saveStand(event)">
+            <h2 class="font-extrabold text-xl">Datos de tu stand</h2>
+            <input class="inp" name="name" placeholder="Nombre del negocio" value="${h(st.name)}" required maxlength="60">
+            <input class="inp" name="rubro" placeholder="Rubro" value="${h(st.rubro)}" maxlength="40">
+            <input class="inp" name="phone" type="tel" inputmode="tel" placeholder="WhatsApp de contacto (con código de área)" value="${h(st.phone)}" maxlength="30">
+            <textarea class="inp" name="description" rows="3" maxlength="300" placeholder="Descripción">${h(st.description)}</textarea>
+            <label class="flex items-center gap-3 text-sm font-bold">Color de tu stand
+              <input type="color" name="color" value="${col(st.color)}" class="w-16 h-12 rounded-lg border-2 border-[#c5d8dc] bg-white">
+            </label>
+            <button id="standBtn" class="btn w-full">Guardar</button>
+          </form>`;
+      }
+
+      return `
+        <h1 class="text-3xl font-extrabold mb-3">${h(st.name)}</h1>
+        ${banner}
+        <div class="flex gap-2 mb-4 flex-wrap">
+          ${tabs.map(t => `<button type="button" class="${ptab === t[0] ? 'btn' : 'btn2'}" onclick="setPTab('${t[0]}')">${t[1]}</button>`).join('')}
+        </div>
+        ${body}`;
+    }
+
+    window.setPTab = t => { ptab = t; editing = null; route(); };
+    window.editProd = id => { editing = id; route(); if (id) window.scrollTo(0, 0); };
+
+    window.calcFinal = f => {
+      const el = document.getElementById('finalPrev');
+      if (!el) return;
+      const pr = +f.price.value || 0;
+      const d = Math.min(Math.max(+f.discount.value || 0, 0), 95);
+      if (!pr) { el.textContent = 'Poné el precio para ver cómo lo van a ver los compradores.'; return; }
+      el.innerHTML = d > 0
+        ? `Los compradores ven <s>${money(pr)}</s> <b>${money(pr * (1 - d / 100))}</b> (${d}% OFF)`
+        : `Los compradores ven <b>${money(pr)}</b>`;
+    };
+
+    // Achica la foto del celular antes de subirla
+    const shrink = file => new Promise((res, rej) => {
+      const img = new Image();
+      const u = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, 1200 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * k));
+        c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(u);
+        c.toBlob(b => (b ? res(b) : rej(new Error('No pude procesar la foto.'))), 'image/jpeg', 0.82);
+      };
+      img.onerror = () => rej(new Error('No pude leer esa foto. Probá con otra.'));
+      img.src = u;
+    });
+
+    window.upImg = act(async inp => {
+      const f = inp.files[0];
+      if (!f) return;
+      const msg = $('#upMsg');
+      msg.textContent = 'Subiendo foto…';
+      try {
+        const blob = await shrink(f);
+        const path = `${me.id}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+        ok(await wait(sb.storage.from('productos').upload(path, blob, { contentType: 'image/jpeg' }), 60000));
+        const url = sb.storage.from('productos').getPublicUrl(path).data.publicUrl;
+        inp.form.image.value = url;
+        const p = $('#prev');
+        p.src = url;
+        p.classList.remove('hidden');
+        $('#prevEmpty').classList.add('hidden');
+        msg.textContent = '✅ Foto lista';
+      } catch (e) {
+        msg.textContent = '';
+        throw e;
+      }
+    });
+
+    window.saveProd = act(async e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const row = {
+        name: String(f.name || '').trim(),
+        category: String(f.category || '').trim() || null,
+        description: String(f.description || '').trim() || null,
+        price: +f.price,
+        discount: Math.min(Math.max(Math.round(+f.discount || 0), 0), 95),
+        image: f.image || null
+      };
+      if (!row.name) throw new Error('Poné el nombre del producto');
+      if (!(row.price > 0)) throw new Error('Poné un precio válido');
+      const btn = $('#prodBtn');
+      btn.disabled = true;
+      try {
+        if (editing) ok(await wait(sb.from('products').update(row).eq('id', editing)));
+        else ok(await wait(sb.from('products').insert({ ...row, stand_id: window._st.id, active: true })));
+      } catch (err) {
+        btn.disabled = false;
+        throw err;
+      }
+      toast(editing ? 'Cambios guardados' : 'Producto publicado 🎉');
+      editing = null;
+      route();
+    });
+
+    window.togProd = act(async id => {
+      const p = (window._ps || []).find(x => x.id === id);
+      if (!p) return;
+      ok(await wait(sb.from('products').update({ active: !p.active }).eq('id', id)));
+      route();
+    });
+
+    window.delProd = act(async id => {
+      if (!confirm('¿Borrar este producto? No se puede deshacer.')) return;
+      ok(await wait(sb.from('products').delete().eq('id', id)));
+      if (editing === id) editing = null;
+      toast('Producto borrado');
+      route();
+    });
+
+    window.saveStand = act(async e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const row = {
+        name: String(f.name || '').trim(),
+        rubro: String(f.rubro || '').trim(),
+        phone: String(f.phone || '').trim() || null,
+        description: String(f.description || '').trim(),
+        color: col(f.color)
+      };
+      if (!row.name) throw new Error('Poné el nombre de tu negocio');
+      ok(await wait(sb.from('stands').update(row).eq('id', window._st.id)));
+      toast('Datos guardados ✅');
+      route();
+    });
+
+    // ======================= RUTAS =======================
+    let renderId = 0;
+    async function route() {
+      const my = ++renderId;
+      const stale = () => my !== renderId;
+      afterRender = null;
+      const [p = '', arg = ''] = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
+      if (!sb) { app.innerHTML = errorView(new Error('No se pudo cargar Supabase. Revisá tu conexión y recargá la página.')); return; }
+      const loader = setTimeout(() => { if (!stale()) app.innerHTML = '<p class="card">Cargando…</p>'; }, 250);
+      try {
+        let html;
+        if (p === '') html = await homeView();
+        else if (p === 'stand') html = await standView(Number(arg));
+        else if (p === 'carrito') html = cartView();
+        else if (p === 'ingresar' || p === 'registro') {
+          if (me) return redirect('#/panel');
+          html = authView(p === 'registro');
+        } else if (p === 'panel') {
+          if (!me) return redirect('#/ingresar');
+          html = await panelView();
+        } else return redirect('#/');
+        if (stale()) return;
+        app.innerHTML = html;
+        if (afterRender) afterRender();
+      } catch (e) {
+        console.error(e);
+        if (!stale()) app.innerHTML = errorView(e);
+      } finally {
+        clearTimeout(loader);
+      }
+    }
+    window.route = route;
+    window.addEventListener('hashchange', route);
+
+    // ======================= INICIO =======================
+    async function initAuth() {
+      if (!sb) return;
+      try {
+        const { data } = await wait(sb.auth.getSession(), 8000);
+        if (!data || !data.session) { me = null; return; }
+        const u = await wait(sb.auth.getUser(), 8000);
+        if (u.error && [400, 401, 403].includes(u.error.status)) {
+          // sesión vieja o vencida: la limpiamos
+          await sb.auth.signOut({ scope: 'local' });
+          me = null;
+        } else {
+          me = (u.data && u.data.user) || data.session.user;
+        }
+      } catch (e) {
+        console.warn('No pude verificar la sesión:', e);
+        me = null;
+        try { await sb.auth.signOut({ scope: 'local' }); } catch (_) { /* nada */ }
+      }
+    }
+
+    (async () => {
+      renderNav();
+      await initAuth();
+      renderNav();
+      if (sb) {
+        sb.auth.onAuthStateChange((ev, session) => {
+          const was = me;
+          me = session ? session.user : null;
+          renderNav();
+          if (ev === 'SIGNED_OUT' && was && location.hash.startsWith('#/panel')) setTimeout(() => navigate('#/ingresar'), 0);
+        });
+      }
+      if (!location.hash) location.replace(location.pathname + location.search + '#/');
+      route();
+    })();
+  </script>
+</body>
+</html>
