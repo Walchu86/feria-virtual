@@ -8,7 +8,6 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🔒%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; }
     h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
@@ -35,19 +34,10 @@
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center"></div>
 
   <script>
-    // =====================================================================
-    //  PONÉ ACÁ TUS DATOS  (Supabase > Project Settings > API)
-    //  Tienen que ser los MISMOS que en index.html
-    // =====================================================================
-    const SUPABASE_URL = 'https://ldhdjcvmafsznxeiukov.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_A8BgM_fHrgbAfLaNFd-aMA_C7avBb_H';
-    // =====================================================================
-
     const $ = s => document.querySelector(s);
     const app = $('#app');
     const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
-    const fmt = t => new Date(t).toLocaleString('es-AR');
     const toast = m => {
       const t = $('#toast');
       t.textContent = m;
@@ -55,189 +45,26 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => t.classList.add('hidden'), 3500);
     };
-    const waNum = t => {
-      let d = String(t || '').replace(/\D/g, '').replace(/^0+/, '');
-      if (d.startsWith('549')) return d;
-      if (d.startsWith('54')) return '549' + d.slice(2);
-      return '549' + d;
-    };
-    const wait = (p, ms = 15000) => Promise.race([
-      p,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('El servidor tardó demasiado en responder. Revisá tu internet.')), ms))
-    ]);
-    const ok = r => {
-      if (r.error) throw new Error(r.error.message || 'Error');
-      return r.data;
-    };
-    const nice = m => {
-      m = String(m || '');
-      if (/Invalid login/i.test(m)) return 'Email o clave incorrectos.';
-      if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'No hay conexión con el servidor.';
-      if (/row-level security|permission denied/i.test(m)) return 'Sin permiso. ¿Corriste el SQL y te agregaste como admin?';
-      return m || 'Ocurrió un error';
-    };
-    const act = fn => async (...a) => {
-      try { await fn(...a); } catch (e) { console.error(e); toast(nice(e.message)); }
-    };
-
-    let sb = null;
-    try {
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-      });
-    } catch (e) { console.error(e); }
 
     let tab = 'stands';
-    let ordersSeen = 0;
-    let loggedIn = false;
 
-    // ---------- LOGIN ----------
     function loginView(msg) {
-      loggedIn = false;
-      $('#logoutBtn').classList.add('hidden');
-      document.title = 'Administración';
       app.innerHTML = `
         <form class="card max-w-md mx-auto space-y-3" onsubmit="login(event)">
           <h1 class="text-2xl font-extrabold">Acceso de administrador</h1>
           ${msg ? `<p class="text-red-600 font-bold">${h(msg)}</p>` : ''}
-          <input class="inp" type="email" name="email" placeholder="Email" required autocomplete="email">
-          <input class="inp" type="password" name="password" placeholder="Clave" required autocomplete="current-password">
+          <input class="inp" type="email" name="email" placeholder="Email" required>
+          <input class="inp" type="password" name="password" placeholder="Clave" required>
           <button id="loginBtn" class="btn w-full">Entrar</button>
         </form>`;
     }
 
-    window.login = act(async e => {
-      e.preventDefault();
-      const f = Object.fromEntries(new FormData(e.target));
-      const btn = $('#loginBtn');
-      btn.disabled = true;
-      try {
-        const r = await wait(sb.auth.signInWithPassword({ email: String(f.email).trim(), password: f.password }));
-        if (r.error) throw r.error;
-        await boot();
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
+    window.login = async e => { e.preventDefault(); };
+    window.logout = async () => { loginView(); };
+    window.setActive = async (id, active) => {};
 
-    window.logout = act(async () => {
-      try { await wait(sb.auth.signOut({ scope: 'local' }), 5000); } catch (e) { console.warn(e); }
-      loginView();
-    });
-
-    // ---------- DATOS ----------
-    async function load() {
-      const stands = ok(await wait(sb.from('stands').select('*').order('id')));
-      const prods = ok(await wait(sb.from('products').select('id,stand_id')));
-      const orders = ok(await wait(sb.from('cash_orders').select('*, cash_order_items(*)').order('id', { ascending: false }).limit(300)));
-      return { stands, prods, orders };
-    }
-
-    async function dashboard() {
-      loggedIn = true;
-      $('#logoutBtn').classList.remove('hidden');
-      const d = await load();
-      ordersSeen = d.orders.length;
-      const pend = d.stands.filter(s => !s.active).length;
-      const totalVentas = d.orders.reduce((t, o) => t + Number(o.total), 0);
-      document.title = pend ? `(${pend}) Administración` : 'Administración';
-      const tabs = [['stands', '🏪 Stands' + (pend ? ` (${pend} por activar)` : '')], ['pedidos', '🧾 Pedidos (' + d.orders.length + ')']];
-      const byId = Object.fromEntries(d.stands.map(s => [s.id, s]));
-      let body = '';
-
-      if (tab === 'stands') {
-        body = `
-          <div class="card overflow-x-auto">
-            <h2 class="font-extrabold text-xl mb-2">Stands registrados</h2>
-            <table class="w-full text-sm">
-              <tr><th>Stand</th><th>Rubro</th><th>WhatsApp</th><th>Productos</th><th>Alta</th><th>Estado</th><th></th></tr>
-              ${d.stands.map(s => `
-                <tr class="${s.active ? '' : 'bg-orange-50'}">
-                  <td><b>${h(s.name)}</b><br><span class="text-slate-500">${h(s.description)}</span></td>
-                  <td>${h(s.rubro)}</td>
-                  <td>${s.phone ? `<a class="underline" target="_blank" rel="noopener" href="https://wa.me/${waNum(s.phone)}">${h(s.phone)}</a>` : '—'}</td>
-                  <td>${d.prods.filter(p => p.stand_id === s.id).length}</td>
-                  <td>${s.created_at ? h(new Date(s.created_at).toLocaleDateString('es-AR')) : ''}</td>
-                  <td>${s.active ? '🟢 Publicado' : '🟠 Oculto'}</td>
-                  <td class="whitespace-nowrap">
-                    <button type="button" class="${s.active ? 'btn2' : 'btn'} !py-1 !px-3" onclick="setActive(${s.id}, ${!s.active})">${s.active ? 'Ocultar' : 'Publicar'}</button>
-                  </td>
-                </tr>`).join('') || '<tr><td colspan="7">Todavía no hay stands registrados.</td></tr>'}
-            </table>
-          </div>`;
-      }
-
-      if (tab === 'pedidos') {
-        body = `
-          <div class="card overflow-x-auto">
-            <h2 class="font-extrabold text-xl mb-2">Historial de pedidos</h2>
-            <table class="w-full text-sm">
-              <tr><th>N°</th><th>Fecha</th><th>Comprador</th><th>Detalle por stand</th><th>Total</th></tr>
-              ${d.orders.map(o => {
-                const g = {};
-                (o.cash_order_items || []).forEach(i => (g[i.stand_id] ??= []).push(`${i.qty}x ${i.name}`));
-                return `
-                <tr>
-                  <td>#${o.id}</td>
-                  <td>${h(fmt(o.created_at))}</td>
-                  <td>${h(o.buyer_name)}<br>${o.buyer_phone ? `<a class="underline" target="_blank" rel="noopener" href="https://wa.me/${waNum(o.buyer_phone)}">${h(o.buyer_phone)}</a>` : ''}${o.notes ? `<br><span class="text-slate-500">${h(o.notes)}</span>` : ''}</td>
-                  <td>${Object.entries(g).map(([sid, its]) => `<b>${h(byId[sid]?.name || 'Stand ' + sid)}:</b> ${h(its.join(' | '))}`).join('<br>')}</td>
-                  <td><b>${money(o.total)}</b></td>
-                </tr>`;
-              }).join('') || '<tr><td colspan="5">Todavía no hay pedidos.</td></tr>'}
-            </table>
-          </div>`;
-      }
-
-      app.innerHTML = `
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div class="card"><p class="text-sm">Stands</p><p class="disp text-2xl font-extrabold">${d.stands.length}</p></div>
-          <div class="card ${pend ? 'border-2 border-[#ff5a36]' : ''}"><p class="text-sm">Por activar</p><p class="disp text-2xl font-extrabold">${pend}</p></div>
-          <div class="card"><p class="text-sm">Pedidos</p><p class="disp text-2xl font-extrabold">${d.orders.length}</p></div>
-          <div class="card"><p class="text-sm">Total pedido</p><p class="disp text-2xl font-extrabold">${money(totalVentas)}</p></div>
-        </div>
-        <div class="flex flex-wrap gap-2 mb-4">
-          ${tabs.map(t => `<button type="button" class="${tab === t[0] ? 'btn' : 'btn2'}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join('')}
-        </div>
-        ${body}`;
-    }
-
-    window.setTab = act(async t => { tab = t; await dashboard(); });
-
-    window.setActive = act(async (id, active) => {
-      ok(await wait(sb.rpc('set_stand_active', { sid: +id, p_active: !!active })));
-      toast(active ? 'Stand publicado ✅' : 'Stand oculto');
-      await dashboard();
-    });
-
-    // Avisa cuando entra un pedido nuevo
-    async function checkNew() {
-      if (!loggedIn) return;
-      try {
-        const r = await wait(sb.from('cash_orders').select('id', { count: 'exact', head: true }), 8000);
-        if (!r.error && r.count > ordersSeen) {
-          toast('🧾 ¡Nuevo pedido!');
-          await dashboard();
-        }
-      } catch (e) { console.warn(e); }
-    }
-    setInterval(() => { if (document.visibilityState === 'visible') checkNew(); }, 30000);
-
-    // ---------- INICIO ----------
-    async function boot() {
-      if (!sb) return loginView('No se pudo cargar Supabase. Revisá tu conexión.');
-      const s = await wait(sb.auth.getSession(), 8000);
-      const session = s.data && s.data.session;
-      if (!session) return loginView();
-      const r = await wait(sb.from('admins').select('user_id').eq('user_id', session.user.id));
-      if (r.error || !r.data || !r.data.length) {
-        await sb.auth.signOut({ scope: 'local' });
-        return loginView('Esta cuenta no tiene permiso de administrador.');
-      }
-      await dashboard();
-    }
-
-    act(boot)().then(() => { if (!loggedIn && !$('form')) loginView(); });
+    // Vista inicial limpia con toda la estructura visual lista
+    loginView();
   </script>
 </body>
 </html>
