@@ -10,16 +10,19 @@
   <style>
     body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; overflow-x: hidden; }
     h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
-    .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 12px; background: #fff; font-size: 16px; }
+    .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 14px; background: #fff; font-size: 16px; }
     .inp:focus { outline: 3px solid #ff5a36; border-color: #ff5a36; }
     .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; transition: background .2s; width: 100%; }
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
     .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
     .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; width: 100%; }
-    .card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 0 #c5d8dc; width: 100%; box-sizing: border-box; }
-    .tile { aspect-ratio: 1; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px; text-align: center; color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.15); transition: transform .15s; cursor: pointer; text-decoration: none; word-break: break-word; }
-    .tile:hover { transform: translateY(-3px); }
+    .card { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(16,38,58,.06); width: 100%; box-sizing: border-box; }
+    
+    /* Tarjeta de stand optimizada mobile-first */
+    .stand-card { background: #fff; border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 2px solid #e4f0f1; transition: all .2s; text-decoration: none; color: #10263a; }
+    .stand-card:hover { border-color: #ff5a36; transform: translateY(-2px); }
+
     .zoom-container { overflow: hidden; position: relative; cursor: zoom-in; }
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
@@ -27,12 +30,12 @@
 </head>
 <body class="min-h-screen flex flex-col">
   <header class="bg-[#10263a] text-white sticky top-0 z-30 shadow-md">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
       <a href="#/" class="flex items-center gap-2 min-w-0">
         <span class="text-2xl shrink-0">🎪</span>
-        <span class="disp font-extrabold text-lg sm:text-xl truncate">Feria Virtual</span>
+        <span class="disp font-extrabold text-base sm:text-xl truncate tracking-tight">Feria Virtual</span>
       </a>
-      <nav id="nav" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold shrink-0"></nav>
+      <nav id="nav" class="flex items-center gap-1 text-xs sm:text-sm font-bold shrink-0"></nav>
     </div>
   </header>
 
@@ -142,14 +145,14 @@
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
       $('#nav').innerHTML = `
-        <button type="button" onclick="toggleCart(true)" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 flex items-center gap-1 shrink-0">
-          🛒 <span class="hidden sm:inline">Carrito</span> (${totalItems}) <span class="text-[11px] opacity-80">${money(totalPrice)}</span>
+        <button type="button" onclick="toggleCart(true)" class="px-2 py-1.5 rounded-xl bg-white/10 flex items-center gap-1 shrink-0 text-xs">
+          🛒 (${totalItems}) <span class="hidden sm:inline">${money(totalPrice)}</span>
         </button>` +
         (currentVendor 
-          ? `<button type="button" onclick="navigate('#/panel')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] shrink-0">Mi Stand</button>
-             <button type="button" onclick="logout()" class="px-2 py-1.5 opacity-80 hover:opacity-100 shrink-0">Salir</button>`
-          : `<button type="button" onclick="navigate('#/ingresar')" class="px-2 py-1.5 shrink-0">Vendedor</button>
-             <button type="button" onclick="navigate('#/registro')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] shrink-0">Crear Stand</button>`);
+          ? `<button type="button" onclick="navigate('#/panel')" class="px-2.5 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0">Mi Stand</button>
+             <button type="button" onclick="logout()" class="px-1.5 py-1.5 opacity-80 hover:opacity-100 text-xs shrink-0">Salir</button>`
+          : `<button type="button" onclick="navigate('#/ingresar')" class="px-2 py-1.5 text-xs shrink-0">Vendedor</button>
+             <button type="button" onclick="navigate('#/registro')" class="px-2.5 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0">Crear Stand</button>`);
     }
 
     window.navigate = hash => { location.hash = hash; };
@@ -180,9 +183,9 @@
                 <span class="text-xs text-slate-500 truncate block">🏪 ${h(item.standName)} · ${money(item.price)} c/u</span>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center" onclick="chgCartQty(${idx}, -1)">−</button>
+                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center text-sm" onclick="chgCartQty(${idx}, -1)">−</button>
                 <span class="text-sm font-bold w-5 text-center">${item.qty}</span>
-                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center" onclick="chgCartQty(${idx}, 1)">+</button>
+                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center text-sm" onclick="chgCartQty(${idx}, 1)">+</button>
               </div>
             </div>`).join('')}
         </div>
@@ -231,15 +234,26 @@
             <input id="searchInput" class="inp max-w-sm !bg-white/10 !text-white placeholder:text-slate-400 !border-white/20 text-sm" placeholder="🔍 ¿Qué estás buscando hoy?" oninput="filterStands(this.value)">
           </div>
         </section>
-        <h2 class="text-xl sm:text-2xl font-extrabold mb-4">Stands Activos</h2>
-        <div id="standsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-          ${stands.length ? stands.map(s => `
-            <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-              ${s.logo ? `<div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1 shrink-0"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-3xl sm:text-4xl">⛺</span>'}
-              <b class="disp text-sm sm:text-lg leading-tight truncate w-full">${h(s.name)}</b>
-              <span class="text-[10px] sm:text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full truncate max-w-full">${h(s.rubro)}</span>
-            </a>`).join('') : '<p class="card col-span-full text-center py-8">No hay stands publicados todavía.</p>'}
+        
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl sm:text-2xl font-extrabold">Stands Activos (${stands.length})</h2>
         </div>
+
+        <div id="standsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          ${stands.length ? stands.map(s => `
+            <a class="stand-card" href="#/stand/${s.id}">
+              <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
+                ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mb-0.5 text-white" style="background:${h(s.color || '#ff5a36')}">${h(s.rubro)}</span>
+                <b class="disp text-base block truncate leading-snug">${h(s.name)}</b>
+                <p class="text-xs text-slate-500 truncate">${h(s.description || 'Ver productos →')}</p>
+              </div>
+              <span class="text-slate-400 font-bold text-lg pr-1">›</span>
+            </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No hay stands activos todavía. (Recordá aprobarlos desde tu panel de admin).</p>'}
+        </div>
+
         <div class="card mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
           <div class="text-center sm:text-left">
             <h3 class="disp text-lg sm:text-xl font-bold">¿Tenés un emprendimiento?</h3>
@@ -255,11 +269,17 @@
       if (!grid) return;
       const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)));
       grid.innerHTML = stands.length ? stands.map(s => `
-        <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-          ${s.logo ? `<div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1 shrink-0"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-3xl sm:text-4xl">⛺</span>'}
-          <b class="disp text-sm sm:text-lg leading-tight truncate w-full">${h(s.name)}</b>
-          <span class="text-[10px] sm:text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full truncate max-w-full">${h(s.rubro)}</span>
-        </a>`).join('') : '<p class="card col-span-full text-center py-8">No se encontraron stands con esa búsqueda.</p>';
+        <a class="stand-card" href="#/stand/${s.id}">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
+            ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
+          </div>
+          <div class="flex-1 min-w-0">
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mb-0.5 text-white" style="background:${h(s.color || '#ff5a36')}">${h(s.rubro)}</span>
+            <b class="disp text-base block truncate leading-snug">${h(s.name)}</b>
+            <p class="text-xs text-slate-500 truncate">${h(s.description || 'Ver productos →')}</p>
+          </div>
+          <span class="text-slate-400 font-bold text-lg pr-1">›</span>
+        </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No se encontraron stands con esa búsqueda.</p>';
     };
 
     async function standView(id) {
@@ -365,7 +385,6 @@
         byStand[i.standId].items.push(i);
       });
 
-      // Rellenar teléfono del stand
       Object.keys(byStand).forEach(standId => {
         const stand = DB.getStands().find(s => s.id === Number(standId));
         if (stand) byStand[standId].phone = stand.phone;
@@ -377,7 +396,6 @@
       cart = [];
       saveCart();
 
-      // Renderizar pantalla de éxito con botones independientes por stand (solución experta para móviles)
       let standsHtml = '';
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
@@ -403,7 +421,7 @@
         <div class="card max-w-lg mx-auto text-center py-6 sm:py-8 space-y-4 shadow-xl">
           <div class="text-5xl">🎉</div>
           <h1 class="disp text-2xl sm:text-3xl font-extrabold">¡Pedido #${orderId} Registrado!</h1>
-          <p class="text-sm text-slate-600">Como compraste en varios stands, tocá los botones de abajo para abrir el chat de WhatsApp con cada dueño y coordinar tu pago y entrega sin trabas:</p>
+          <p class="text-sm text-slate-600">Tocá los botones de abajo para abrir el chat de WhatsApp con cada vendedor y coordinar tu pago y entrega:</p>
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
