@@ -2,47 +2,47 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Feria Virtual · feriavirtual.shop</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎪%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; }
+    body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; overflow-x: hidden; }
     h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
-    .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 12px; background: #fff; }
+    .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 12px; background: #fff; font-size: 16px; }
     .inp:focus { outline: 3px solid #ff5a36; border-color: #ff5a36; }
-    .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; transition: background .2s; }
+    .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; transition: background .2s; width: 100%; }
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
     .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
-    .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; }
-    .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 0 #c5d8dc; }
-    .tile { aspect-ratio: 1; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .15s; cursor: pointer; text-decoration: none; }
-    .tile:hover { transform: translateY(-4px) rotate(-1deg); }
+    .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; width: 100%; }
+    .card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 0 #c5d8dc; width: 100%; box-sizing: border-box; }
+    .tile { aspect-ratio: 1; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px; text-align: center; color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.15); transition: transform .15s; cursor: pointer; text-decoration: none; word-break: break-word; }
+    .tile:hover { transform: translateY(-3px); }
     .zoom-container { overflow: hidden; position: relative; cursor: zoom-in; }
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
   <header class="bg-[#10263a] text-white sticky top-0 z-30 shadow-md">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-      <a href="#/" class="flex items-center gap-2">
-        <span class="text-2xl">🎪</span>
-        <span class="disp font-extrabold text-xl">Feria Virtual</span>
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <a href="#/" class="flex items-center gap-2 min-w-0">
+        <span class="text-2xl shrink-0">🎪</span>
+        <span class="disp font-extrabold text-lg sm:text-xl truncate">Feria Virtual</span>
       </a>
-      <nav id="nav" class="flex items-center gap-2 text-sm font-bold"></nav>
+      <nav id="nav" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold shrink-0"></nav>
     </div>
   </header>
 
-  <main id="app" class="max-w-6xl mx-auto px-4 py-6 min-h-[75vh]"><p class="card">Cargando plataforma…</p></main>
+  <main id="app" class="max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1"></main>
 
   <!-- Carrito Deslizante Lateral -->
   <div id="cartDrawer" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity" onclick="toggleCart(false)">
-    <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white p-6 shadow-2xl flex flex-col overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white p-4 sm:p-6 shadow-2xl flex flex-col overflow-y-auto" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between pb-4 border-b border-[#e4f0f1]">
-        <h2 class="disp text-2xl font-extrabold">🛒 Tu Carrito</h2>
+        <h2 class="disp text-xl sm:text-2xl font-extrabold">🛒 Tu Carrito</h2>
         <button type="button" class="btn2 !px-3 !py-1 text-sm" onclick="toggleCart(false)">✕</button>
       </div>
       <div id="cartDrawerContent" class="flex-1 py-4 space-y-4"></div>
@@ -50,26 +50,30 @@
   </div>
 
   <!-- Modal Zoom -->
-  <div id="zoomModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-4" onclick="closeZoom()">
+  <div id="zoomModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-3" onclick="closeZoom()">
     <div class="bg-white rounded-3xl p-4 max-w-lg w-full relative overflow-hidden" onclick="event.stopPropagation()">
       <button type="button" class="absolute top-3 right-3 bg-slate-200 rounded-full w-8 h-8 font-bold flex items-center justify-center" onclick="closeZoom()">✕</button>
       <div id="zoomContent" class="text-center"></div>
     </div>
   </div>
 
-  <footer class="bg-[#10263a] text-white py-8 text-center text-sm mt-12">
+  <footer class="bg-[#10263a] text-white py-6 text-center text-xs sm:text-sm mt-12 px-4">
     <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
-    <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 text-xs bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
+    <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
   </footer>
 
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center shadow-lg"></div>
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center shadow-lg text-sm"></div>
 
   <script>
     const ADMIN_WHATSAPP = '5493794655867';
-    const PERSONAL_PAY_ALIAS = 'feria.virtual';
+    const PAYMENT_INFO = {
+      alias: 'feria.virtual',
+      cvu: '0000076500000039584142',
+      holder: 'Walter Emanuel Canteros',
+      fee: '$10.000 ARS'
+    };
     
-    // Configuración Cloudinary
     const CLOUD_NAME = 'xr6zpe1k';
     const UPLOAD_PRESET = 'feria_preset';
 
@@ -138,14 +142,14 @@
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
       $('#nav').innerHTML = `
-        <button type="button" onclick="toggleCart(true)" class="px-3 py-2 rounded-xl bg-white/10 flex items-center gap-1.5">
-          🛒 Carrito (${totalItems}) <span class="text-xs opacity-80">${money(totalPrice)}</span>
+        <button type="button" onclick="toggleCart(true)" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 flex items-center gap-1 shrink-0">
+          🛒 <span class="hidden sm:inline">Carrito</span> (${totalItems}) <span class="text-[11px] opacity-80">${money(totalPrice)}</span>
         </button>` +
         (currentVendor 
-          ? `<button type="button" onclick="navigate('#/panel')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Mi Stand</button>
-             <button type="button" onclick="logout()" class="px-3 py-2 opacity-80 hover:opacity-100">Salir</button>`
-          : `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>
-             <button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`);
+          ? `<button type="button" onclick="navigate('#/panel')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] shrink-0">Mi Stand</button>
+             <button type="button" onclick="logout()" class="px-2 py-1.5 opacity-80 hover:opacity-100 shrink-0">Salir</button>`
+          : `<button type="button" onclick="navigate('#/ingresar')" class="px-2 py-1.5 shrink-0">Vendedor</button>
+             <button type="button" onclick="navigate('#/registro')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] shrink-0">Crear Stand</button>`);
     }
 
     window.navigate = hash => { location.hash = hash; };
@@ -168,23 +172,23 @@
       }
       const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
       cdc.innerHTML = `
-        <div class="space-y-4 flex-1">
+        <div class="space-y-3 flex-1 overflow-y-auto">
           ${cart.map((item, idx) => `
-            <div class="flex items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div>
-                <b class="text-sm block">${h(item.name)}</b>
-                <span class="text-xs text-slate-500">🏪 ${h(item.standName)} · ${money(item.price)} c/u</span>
+            <div class="flex items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="min-w-0 flex-1">
+                <b class="text-sm block truncate">${h(item.name)}</b>
+                <span class="text-xs text-slate-500 truncate block">🏪 ${h(item.standName)} · ${money(item.price)} c/u</span>
               </div>
-              <div class="flex items-center gap-2">
-                <button type="button" class="bg-slate-200 px-2 py-0.5 rounded font-bold" onclick="chgCartQty(${idx}, -1)">−</button>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center" onclick="chgCartQty(${idx}, -1)">−</button>
                 <span class="text-sm font-bold w-5 text-center">${item.qty}</span>
-                <button type="button" class="bg-slate-200 px-2 py-0.5 rounded font-bold" onclick="chgCartQty(${idx}, 1)">+</button>
+                <button type="button" class="bg-slate-200 w-7 h-7 rounded font-bold flex items-center justify-center" onclick="chgCartQty(${idx}, 1)">+</button>
               </div>
             </div>`).join('')}
         </div>
         <div class="pt-4 border-t border-slate-200 mt-auto">
-          <div class="flex justify-between items-center mb-4"><span class="font-bold text-lg">Total acumulado</span><span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(total)}</span></div>
-          <button type="button" class="btn w-full text-lg mb-2" onclick="toggleCart(false); navigate('#/checkout')">Iniciar Pedido</button>
+          <div class="flex justify-between items-center mb-4"><span class="font-bold text-base">Total acumulado</span><span class="disp text-xl sm:text-2xl font-extrabold text-[#ff5a36]">${money(total)}</span></div>
+          <button type="button" class="btn text-base mb-2 !py-3" onclick="toggleCart(false); navigate('#/checkout')">Iniciar Pedido</button>
           <button type="button" class="btn2 w-full text-sm !bg-slate-200 !text-[#10263a]" onclick="cart=[]; saveCart(); toggleCart(false); toast('Carrito vaciado');">Vaciar carrito</button>
         </div>`;
     }
@@ -207,10 +211,10 @@
 
     window.openZoom = (imgUrl, name, desc) => {
       $('#zoomContent').innerHTML = `
-        <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-64" onclick="this.classList.toggle('zoomed')">
+        <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-56 sm:h-64" onclick="this.classList.toggle('zoomed')">
           ${imgUrl ? `<img src="${h(imgUrl)}" class="w-full h-full object-contain">` : '<span class="text-6xl">📦</span>'}
         </div>
-        <h3 class="disp text-xl font-bold">${h(name)}</h3>
+        <h3 class="disp text-lg sm:text-xl font-bold">${h(name)}</h3>
         <p class="text-sm text-slate-600 mt-1">${h(desc || 'Sin descripción adicional.')}</p>
         <p class="text-xs text-slate-400 mt-2">💡 Tocá la foto para hacer zoom.</p>`;
       $('#zoomModal').classList.remove('hidden');
@@ -220,28 +224,28 @@
     async function homeView() {
       const stands = DB.getStands().filter(s => s.active);
       return `
-        <section class="rounded-3xl bg-[#10263a] text-white p-6 md:p-10 mb-6 shadow-xl relative overflow-hidden">
-          <h1 class="text-3xl md:text-5xl font-extrabold">Feria Virtual 🎪</h1>
-          <p class="mt-2 max-w-xl text-slate-300">Apoyá a los emprendedores locales. Elegí un stand, mirá sus productos y coordiná tu compra directo por WhatsApp.</p>
-          <div class="mt-6 flex flex-wrap gap-3">
-            <input id="searchInput" class="inp max-w-sm !bg-white/10 !text-white placeholder:text-slate-400 !border-white/20" placeholder="🔍 ¿Qué estás buscando hoy?" oninput="filterStands(this.value)">
+        <section class="rounded-3xl bg-[#10263a] text-white p-5 sm:p-8 md:p-10 mb-6 shadow-xl relative overflow-hidden">
+          <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold">Feria Virtual 🎪</h1>
+          <p class="mt-2 text-sm sm:text-base max-w-xl text-slate-300">Apoyá a los emprendedores locales. Elegí un stand, mirá sus productos y coordiná tu compra directo por WhatsApp.</p>
+          <div class="mt-5">
+            <input id="searchInput" class="inp max-w-sm !bg-white/10 !text-white placeholder:text-slate-400 !border-white/20 text-sm" placeholder="🔍 ¿Qué estás buscando hoy?" oninput="filterStands(this.value)">
           </div>
         </section>
-        <h2 class="text-2xl font-extrabold mb-4">Stands Activos</h2>
-        <div id="standsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h2 class="text-xl sm:text-2xl font-extrabold mb-4">Stands Activos</h2>
+        <div id="standsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
           ${stands.length ? stands.map(s => `
             <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-              ${s.logo ? `<div class="w-16 h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-4xl">⛺</span>'}
-              <b class="disp text-lg leading-tight">${h(s.name)}</b>
-              <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
+              ${s.logo ? `<div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1 shrink-0"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-3xl sm:text-4xl">⛺</span>'}
+              <b class="disp text-sm sm:text-lg leading-tight truncate w-full">${h(s.name)}</b>
+              <span class="text-[10px] sm:text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full truncate max-w-full">${h(s.rubro)}</span>
             </a>`).join('') : '<p class="card col-span-full text-center py-8">No hay stands publicados todavía.</p>'}
         </div>
-        <div class="card mt-10 flex flex-wrap items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
-          <div>
-            <h3 class="disp text-xl font-bold">¿Tenés un emprendimiento?</h3>
-            <p class="text-sm text-slate-600">Abrí tu stand en la feria por $15.000/mes + 5% comisión semanal.</p>
+        <div class="card mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
+          <div class="text-center sm:text-left">
+            <h3 class="disp text-lg sm:text-xl font-bold">¿Tenés un emprendimiento?</h3>
+            <p class="text-xs sm:text-sm text-slate-600">Abrí tu stand en la feria por <b>$10.000/mes</b> + 5% comisión semanal.</p>
           </div>
-          <button type="button" class="btn" onclick="navigate('#/registro')">Crear mi stand</button>
+          <button type="button" class="btn sm:w-auto shrink-0" onclick="navigate('#/registro')">Crear mi stand</button>
         </div>`;
     }
 
@@ -252,69 +256,69 @@
       const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)));
       grid.innerHTML = stands.length ? stands.map(s => `
         <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-          ${s.logo ? `<div class="w-16 h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-4xl">⛺</span>'}
-          <b class="disp text-lg leading-tight">${h(s.name)}</b>
-          <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
+          ${s.logo ? `<div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1 shrink-0"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-3xl sm:text-4xl">⛺</span>'}
+          <b class="disp text-sm sm:text-lg leading-tight truncate w-full">${h(s.name)}</b>
+          <span class="text-[10px] sm:text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full truncate max-w-full">${h(s.rubro)}</span>
         </a>`).join('') : '<p class="card col-span-full text-center py-8">No se encontraron stands con esa búsqueda.</p>';
     };
 
     async function standView(id) {
       const stand = DB.getStands().find(s => s.id === Number(id));
-      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-2xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       const products = DB.getProducts().filter(p => p.stand_id === stand.id && p.active);
       const reviews = DB.getReviews().filter(r => r.stand_id === stand.id);
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
 
       return `
-        <div class="rounded-3xl p-6 mb-6 text-white shadow-lg flex flex-wrap items-center gap-6" style="background:${h(stand.color || '#ff5a36')}">
-          ${stand.logo ? `<div class="w-24 h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
-          <div class="flex-1 min-w-[200px]">
-            <button type="button" class="underline text-sm mb-2 font-bold block" onclick="navigate('#/')">← Volver a la feria</button>
-            <h1 class="text-3xl font-extrabold flex items-center gap-2 flex-wrap">${h(stand.name)} <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full">${h(stand.rubro)}</span></h1>
-            <p class="opacity-90 mt-1 max-w-xl">${h(stand.description || '')}</p>
-            <p class="text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
+        <div class="rounded-3xl p-5 sm:p-6 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
+          ${stand.logo ? `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+          <div class="flex-1 min-w-0 w-full">
+            <button type="button" class="underline text-xs sm:text-sm mb-2 font-bold block mx-auto sm:mx-0" onclick="navigate('#/')">← Volver a la feria</button>
+            <h1 class="text-2xl sm:text-3xl font-extrabold flex flex-col sm:flex-row items-center sm:items-center gap-2">${h(stand.name)} <span class="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full uppercase">${h(stand.rubro)}</span></h1>
+            <p class="opacity-90 text-xs sm:text-sm mt-1 max-w-xl">${h(stand.description || '')}</p>
+            <p class="text-xs sm:text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
           </div>
-          ${stand.phone ? `<div><a class="btnwa" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a></div>` : ''}
+          ${stand.phone ? `<div class="w-full sm:w-auto mt-2 sm:mt-0"><a class="btnwa text-sm py-2 px-4 inline-block" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a></div>` : ''}
         </div>
 
-        <h2 class="text-2xl font-extrabold mb-4">Productos del Stand</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h2 class="text-xl sm:text-2xl font-extrabold mb-4">Productos del Stand</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
           ${products.length ? products.map(p => {
             const finalP = finalPrice(p);
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md">
                 <div class="aspect-square bg-slate-100 relative cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
-                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-4xl">📦</div>'}
-                  <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-sm">🔍 Ver con lupa</div>
+                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
+                  <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-xs">🔍 Ver lupa</div>
                 </div>
-                <div class="p-4 flex-1 flex flex-col">
-                  <span class="text-xs text-slate-500 uppercase font-bold">${h(p.category)}</span>
-                  <b class="text-base leading-tight mt-1 mb-2">${h(p.name)}</b>
-                  ${p.specs && p.specs.sizes ? `<p class="text-xs text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
-                  ${p.specs && p.specs.measures ? `<p class="text-xs text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
+                <div class="p-3 sm:p-4 flex-1 flex flex-col">
+                  <span class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold truncate">${h(p.category)}</span>
+                  <b class="text-sm sm:text-base leading-tight mt-1 mb-1 line-clamp-2">${h(p.name)}</b>
+                  ${p.specs && p.specs.sizes ? `<p class="text-[11px] text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
+                  ${p.specs && p.specs.measures ? `<p class="text-[11px] text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
                   <div class="mt-auto pt-2">
-                    ${p.discount > 0 ? `<s class="text-slate-400 text-xs">${money(p.price)}</s> <span class="text-green-600 font-bold text-xs">-${p.discount}%</span><br>` : ''}
-                    <b class="disp text-xl text-[#ff5a36]">${money(finalP)}</b>
-                    <button type="button" class="btn w-full mt-3 text-sm py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar al Carrito</button>
+                    ${p.discount > 0 ? `<s class="text-slate-400 text-[11px]">${money(p.price)}</s> <span class="text-green-600 font-bold text-[11px]">-${p.discount}%</span><br>` : ''}
+                    <b class="disp text-lg sm:text-xl text-[#ff5a36]">${money(finalP)}</b>
+                    <button type="button" class="btn w-full mt-2 text-xs sm:text-sm !py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
                   </div>
                 </div>
               </div>`;
           }).join('') : '<p class="card col-span-full text-center py-8">Este stand aún no tiene productos publicados.</p>'}
         </div>
 
-        <div class="card mt-10 max-w-xl">
-          <h3 class="disp text-xl font-bold mb-3">⭐ Calificá a este Stand</h3>
+        <div class="card mt-8 max-w-xl mx-auto">
+          <h3 class="disp text-lg sm:text-xl font-bold mb-3">⭐ Calificá a este Stand</h3>
           <form onsubmit="submitReview(event, ${stand.id})" class="space-y-3">
-            <input class="inp" name="author" placeholder="Tu nombre" required>
-            <select class="inp" name="rating" required>
+            <input class="inp text-sm" name="author" placeholder="Tu nombre" required>
+            <select class="inp text-sm" name="rating" required>
               <option value="5">⭐⭐⭐⭐⭐ Excelente (5/5)</option>
               <option value="4">⭐⭐⭐⭐ Muy Bueno (4/5)</option>
               <option value="3">⭐⭐⭐ Bueno (3/5)</option>
               <option value="2">⭐⭐ Regular (2/5)</option>
               <option value="1">⭐ Malo (1/5)</option>
             </select>
-            <textarea class="inp" name="comment" rows="2" placeholder="Escribí tu opinión sobre la atención y el producto..." required></textarea>
-            <button class="btn w-full">Enviar opinión</button>
+            <textarea class="inp text-sm" name="comment" rows="2" placeholder="Escribí tu opinión sobre la atención y el producto..." required></textarea>
+            <button class="btn text-sm py-2.5">Enviar opinión</button>
           </form>
         </div>`;
     }
@@ -336,14 +340,14 @@
         <div class="card max-w-xl mx-auto shadow-xl">
           <h1 class="disp text-2xl font-extrabold mb-4">Finalizar Pedido</h1>
           <form onsubmit="placeOrder(event)" class="space-y-4">
-            <input class="inp" name="name" placeholder="Tu Nombre y Apellido" required>
-            <input class="inp" name="phone" type="tel" placeholder="Tu WhatsApp (con característica, ej: 379...)" required>
-            <textarea class="inp" name="notes" rows="3" placeholder="Notas de entrega (dirección, horario, si preferís transferencia o efectivo...)"></textarea>
+            <input class="inp text-sm" name="name" placeholder="Tu Nombre y Apellido" required>
+            <input class="inp text-sm" name="phone" type="tel" placeholder="Tu WhatsApp (con característica, ej: 379...)" required>
+            <textarea class="inp text-sm" name="notes" rows="3" placeholder="Notas de entrega (dirección, horario, si preferís transferencia o efectivo...)"></textarea>
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div class="flex justify-between items-center"><span class="font-bold">Total a abonar</span><span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(total)}</span></div>
-              <p class="text-xs text-slate-500 mt-1">Al confirmar, el sistema generará un mensaje automático para enviarlo por WhatsApp a cada vendedor.</p>
+              <p class="text-xs text-slate-500 mt-1">Al confirmar, el sistema generará los enlaces directos de WhatsApp para comunicarte con cada vendedor involucrado.</p>
             </div>
-            <button class="btn w-full text-lg py-3">Confirmar y Enviar Pedido por WhatsApp</button>
+            <button class="btn text-base py-3">Confirmar Pedido</button>
           </form>
         </div>`;
     }
@@ -357,48 +361,67 @@
 
       const byStand = {};
       cart.forEach(i => {
-        byStand[i.standId] = byStand[i.standId] || { name: i.standName, items: [] };
+        byStand[i.standId] = byStand[i.standId] || { name: i.standName, phone: '', items: [] };
         byStand[i.standId].items.push(i);
+      });
+
+      // Rellenar teléfono del stand
+      Object.keys(byStand).forEach(standId => {
+        const stand = DB.getStands().find(s => s.id === Number(standId));
+        if (stand) byStand[standId].phone = stand.phone;
       });
 
       orders.push({ id: orderId, buyer: f, cart: [...cart], total, status: 'Pendiente', delivered: false, date: Date.now() });
       DB.saveOrders(orders);
 
-      Object.keys(byStand).forEach(standId => {
-        const stand = DB.getStands().find(s => s.id === Number(standId));
-        if (stand && stand.phone) {
-          const st = byStand[standId];
-          const txt = `Hola ${stand.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
-            st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
-            `\n\nTotal Stand: ${money(st.items.reduce((a,b)=>a+(b.price*b.qty),0))}` +
-            (f.notes ? `\nNotas: ${f.notes}` : '') +
-            `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
-          window.open(`https://wa.me/${stand.phone}?text=${encodeURIComponent(txt)}`, '_blank');
-        }
-      });
-
       cart = [];
       saveCart();
+
+      // Renderizar pantalla de éxito con botones independientes por stand (solución experta para móviles)
+      let standsHtml = '';
+      Object.keys(byStand).forEach(standId => {
+        const st = byStand[standId];
+        const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
+        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
+          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
+          `\n\nTotal Stand: ${money(standTotal)}` +
+          (f.notes ? `\nNotas: ${f.notes}` : '') +
+          `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
+        
+        standsHtml += `
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
+            <div class="flex justify-between items-center">
+              <b>🏪 ${h(st.name)}</b>
+              <span class="disp text-[#ff5a36] font-bold">${money(standTotal)}</span>
+            </div>
+            <p class="text-xs text-slate-600">${st.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
+            ${st.phone ? `<a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm !py-2.5 block text-center">💬 Enviar WhatsApp a ${h(st.name)}</a>` : '<p class="text-xs text-red-500">Stand sin teléfono registrado</p>'}
+          </div>`;
+      });
+
       app.innerHTML = `
-        <div class="card max-w-lg mx-auto text-center py-10">
-          <div class="text-6xl mb-3">🎉</div>
-          <h1 class="disp text-3xl font-extrabold mb-2">¡Pedido #${orderId} Registrado!</h1>
-          <p class="text-slate-600 mb-6">Se abrieron los chats de WhatsApp con cada vendedor para coordinar el pago y la entrega.</p>
-          <button type="button" class="btn" onclick="navigate('#/')">Volver al Inicio</button>
+        <div class="card max-w-lg mx-auto text-center py-6 sm:py-8 space-y-4 shadow-xl">
+          <div class="text-5xl">🎉</div>
+          <h1 class="disp text-2xl sm:text-3xl font-extrabold">¡Pedido #${orderId} Registrado!</h1>
+          <p class="text-sm text-slate-600">Como compraste en varios stands, tocá los botones de abajo para abrir el chat de WhatsApp con cada dueño y coordinar tu pago y entrega sin trabas:</p>
+          <div class="space-y-3 pt-2">
+            ${standsHtml}
+          </div>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
         </div>`;
     };
 
     function authView(isReg) {
       return `
-        <form class="card max-w-xl mx-auto space-y-4 shadow-xl" onsubmit="handleAuth(event, ${isReg})">
-          <h1 class="disp text-2xl font-extrabold">${isReg ? '⛺ Creá tu Stand en la Feria' : '🔐 Ingresar como Vendedor'}</h1>
+        <form class="card max-w-xl mx-auto space-y-4 shadow-xl text-left" onsubmit="handleAuth(event, ${isReg})">
+          <h1 class="disp text-xl sm:text-2xl font-extrabold text-center">${isReg ? '⛺ Creá tu Stand en la Feria' : '🔐 Ingresar como Vendedor'}</h1>
           ${isReg ? `
-            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-sm text-amber-900">
-              <b>Modelo de Negocio:</b> Cuota mensual de <b>$15.000 ARS</b> + 5% comisión semanal sobre ventas.
+            <div class="bg-amber-50 p-3 sm:p-4 rounded-xl border border-amber-200 text-xs sm:text-sm text-amber-900">
+              <b>Modelo de Negocio:</b> Cuota mensual de <b>$10.000 ARS</b> + 5% comisión semanal sobre ventas.
             </div>
-            <input class="inp" name="name" placeholder="Nombre de tu Emprendimiento" required>
+            <input class="inp text-sm" name="name" placeholder="Nombre de tu Emprendimiento" required>
             
-            <select class="inp" name="rubroSelect" id="rubroSelect" required onchange="handleRubroChange(this.value)">
+            <select class="inp text-sm" name="rubroSelect" id="rubroSelect" required onchange="handleRubroChange(this.value)">
               <option value="">Seleccioná tu Rubro...</option>
               <option value="Comida">Comida / Gastronomía</option>
               <option value="Ropa">Ropa / Indumentaria</option>
@@ -408,27 +431,29 @@
               <option value="Otro">Otro (Escribir rubro...)</option>
             </select>
             <div id="customRubroContainer" class="hidden">
-              <input class="inp" name="customRubro" id="customRubroInput" placeholder="Escribí cuál es tu rubro">
+              <input class="inp text-sm" name="customRubro" id="customRubroInput" placeholder="Escribí cuál es tu rubro">
             </div>
 
-            <input class="inp" name="phone" type="tel" placeholder="Tu WhatsApp (con característica)" required>
-            <textarea class="inp" name="description" rows="2" placeholder="Breve descripción de lo que vendés..."></textarea>
+            <input class="inp text-sm" name="phone" type="tel" placeholder="Tu WhatsApp (con característica)" required>
+            <textarea class="inp text-sm" name="description" rows="2" placeholder="Breve descripción de lo que vendés..."></textarea>
             
-            <label class="block text-sm font-bold">Logo de tu emprendimiento (opcional):
-              <input type="file" id="logoFile" accept="image/*" class="inp mt-1 text-sm bg-white">
+            <label class="block text-xs sm:text-sm font-bold">Logo de tu emprendimiento (opcional):
+              <input type="file" id="logoFile" accept="image/*" class="inp mt-1 text-xs bg-white">
             </label>
 
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <p class="font-bold mb-1">Dato para transferir los $15.000 de alta (Personal Pay):</p>
-              <p>Alias: <b>${PERSONAL_PAY_ALIAS}</b></p>
+            <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 text-xs space-y-1">
+              <p class="font-bold text-slate-800 mb-1">Datos para transferir los $10.000 de alta:</p>
+              <p>Alias: <b>${PAYMENT_INFO.alias}</b></p>
+              <p>CVU: <b>${PAYMENT_INFO.cvu}</b></p>
+              <p>Titular: <b>${PAYMENT_INFO.holder}</b></p>
             </div>
-            <label class="block text-sm font-bold">Subir comprobante de transferencia (foto o captura):
-              <input type="file" id="receiptFile" accept="image/*" class="inp mt-1 text-sm bg-white" required>
+            <label class="block text-xs sm:text-sm font-bold">Subir comprobante de transferencia (foto o captura):
+              <input type="file" id="receiptFile" accept="image/*" class="inp mt-1 text-xs bg-white" required>
             </label>` : ''}
-          <input class="inp" name="email" type="email" placeholder="Correo electrónico" required>
-          <input class="inp" name="password" type="password" placeholder="Contraseña" required minlength="6">
-          <button class="btn w-full text-lg" id="submitAuthBtn">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
-          <button type="button" class="w-full text-center text-sm underline text-slate-600" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
+          <input class="inp text-sm" name="email" type="email" placeholder="Correo electrónico" required>
+          <input class="inp text-sm" name="password" type="password" placeholder="Contraseña" required minlength="6">
+          <button class="btn text-base py-3" id="submitAuthBtn">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
+          <button type="button" class="w-full text-center text-xs sm:text-sm underline text-slate-600 pt-2" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
         </form>`;
     }
 
@@ -486,14 +511,14 @@
         stands.push(newStand);
         DB.saveStands(stands);
 
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $15.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $10.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
         
         app.innerHTML = `
-          <div class="card max-w-lg mx-auto text-center py-10">
-            <div class="text-6xl mb-3">⏳</div>
-            <h1 class="disp text-2xl font-extrabold mb-2">¡Stand Creado con Éxito!</h1>
-            <p class="text-slate-600 mb-4">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifique, se activará en la feria.</p>
-            <button class="btn" onclick="navigate('#/')">Volver al Inicio</button>
+          <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
+            <div class="text-6xl">⏳</div>
+            <h1 class="disp text-2xl font-extrabold">¡Stand Creado con Éxito!</h1>
+            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifique, se activará en la feria.</p>
+            <button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al Inicio</button>
           </div>`;
       } else {
         const stand = stands.find(s => s.email === f.email && s.password === f.password);
@@ -524,11 +549,11 @@
 
       if (!stand.active) {
         return `
-          <div class="card max-w-lg mx-auto text-center py-10">
-            <div class="text-5xl mb-3">⏳</div>
-            <h1 class="disp text-2xl font-bold mb-2">Stand Pendiente de Activación</h1>
-            <p class="text-slate-600 mb-4">Walchu está verificando tu comprobante de transferencia a feria.virtual. Pronto tu stand estará visible en la feria.</p>
-            <button class="btn" onclick="logout()">Cerrar Sesión</button>
+          <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
+            <div class="text-5xl">⏳</div>
+            <h1 class="disp text-2xl font-bold">Stand Pendiente de Activación</h1>
+            <p class="text-sm text-slate-600">Walchu está verificando tu comprobante de transferencia a feria.virtual. Pronto tu stand estará visible en la feria.</p>
+            <button class="btn max-w-xs mx-auto" onclick="logout()">Cerrar Sesión</button>
           </div>`;
       }
 
@@ -536,11 +561,11 @@
       if (vendorTab === 'products') {
         const editingP = products.find(p => p.id === editingProdId) || {};
         tabContent = `
-          <div class="grid md:grid-cols-3 gap-6">
-            <form class="card space-y-3 md:col-span-1 h-fit" onsubmit="saveVendorProduct(event)" id="prodForm">
-              <h3 class="disp text-xl font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
-              <input class="inp" name="name" placeholder="Nombre del producto" value="${h(editingP.name || '')}" required>
-              <select class="inp" name="category" required onchange="renderDynamicSpecs(this.value, ${JSON.stringify(editingP.specs || {})})">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <form class="card space-y-3 md:col-span-1 h-fit text-left" onsubmit="saveVendorProduct(event)" id="prodForm">
+              <h3 class="disp text-lg sm:text-xl font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
+              <input class="inp text-sm" name="name" placeholder="Nombre del producto" value="${h(editingP.name || '')}" required>
+              <select class="inp text-sm" name="category" required onchange="renderDynamicSpecs(this.value, ${JSON.stringify(editingP.specs || {})})">
                 <option value="">Categoría...</option>
                 <option value="Comida" ${editingP.category==='Comida'?'selected':''}>Comida</option>
                 <option value="Ropa" ${editingP.category==='Ropa'?'selected':''}>Ropa / Indumentaria</option>
@@ -549,31 +574,31 @@
               </select>
               <div id="dynamicSpecsContainer"></div>
               <div class="grid grid-cols-2 gap-2">
-                <input class="inp" name="price" type="number" placeholder="Precio ($)" value="${editingP.price || ''}" required>
-                <input class="inp" name="discount" type="number" placeholder="% Desc. (opc)" value="${editingP.discount || ''}" min="0" max="95">
+                <input class="inp text-sm" name="price" type="number" placeholder="Precio ($)" value="${editingP.price || ''}" required>
+                <input class="inp text-sm" name="discount" type="number" placeholder="% Desc. (opc)" value="${editingP.discount || ''}" min="0" max="95">
               </div>
-              <textarea class="inp" name="description" rows="2" placeholder="Descripción...">${h(editingP.description || '')}</textarea>
+              <textarea class="inp text-sm" name="description" rows="2" placeholder="Descripción...">${h(editingP.description || '')}</textarea>
               <label class="block text-xs font-bold">Foto del producto:
                 <input type="file" id="prodImage" accept="image/*" class="inp mt-1 text-xs bg-white">
               </label>
-              <button class="btn w-full" id="saveProdBtn">${editingP.id ? 'Guardar Cambios' : 'Publicar Producto'}</button>
+              <button class="btn text-sm py-2.5" id="saveProdBtn">${editingP.id ? 'Guardar Cambios' : 'Publicar Producto'}</button>
               ${editingP.id ? `<button type="button" class="btn2 w-full !bg-slate-300 !text-black text-sm" onclick="editingProdId=null; route();">Cancelar</button>` : ''}
             </form>
 
             <div class="md:col-span-2 space-y-4">
-              <div class="card flex flex-wrap items-center justify-between gap-3 bg-[#f3f9fa]">
+              <div class="card flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#f3f9fa]">
                 <div>
-                  <h3 class="disp font-bold">Herramienta Masiva</h3>
+                  <h3 class="disp font-bold text-sm sm:text-base">Herramienta Masiva</h3>
                   <p class="text-xs text-slate-600">Aumentar o bajar precios de todo tu catálogo por porcentaje.</p>
                 </div>
-                <div class="flex gap-2">
-                  <input id="massPct" type="number" placeholder="% (ej: 10 o -10)" class="inp !w-24 !py-1 text-sm">
-                  <button type="button" class="btn2 !py-1 text-sm" onclick="applyMassPrice()">Aplicar</button>
+                <div class="flex gap-2 w-full sm:w-auto">
+                  <input id="massPct" type="number" placeholder="% (ej: 10)" class="inp !w-24 !py-1 text-sm">
+                  <button type="button" class="btn2 !py-1 text-sm shrink-0" onclick="applyMassPrice()">Aplicar</button>
                 </div>
               </div>
 
               <h3 class="disp text-xl font-bold">Tus Productos (${products.length})</h3>
-              <div class="grid sm:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${products.length ? products.map(p => `
                   <div class="card !p-3 flex gap-3 items-center">
                     <div class="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
@@ -581,7 +606,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <b class="text-sm truncate block">${h(p.name)}</b>
-                      <span class="disp text-[#ff5a36] font-bold">${money(finalPrice(p))}</span>
+                      <span class="disp text-[#ff5a36] font-bold text-sm">${money(finalPrice(p))}</span>
                       <div class="flex gap-3 text-xs mt-1">
                         <button class="underline font-bold" onclick="editProduct(${p.id})">Editar</button>
                         <button class="underline text-red-600" onclick="deleteProduct(${p.id})">Borrar</button>
@@ -596,34 +621,36 @@
         tabContent = `
           <div class="card overflow-x-auto">
             <h3 class="disp text-xl font-bold mb-3">🧾 Pedidos Recibidos</h3>
-            <table class="w-full text-sm">
-              <tr><th>N°</th><th>Comprador</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
-              ${orders.length ? orders.map(o => `
-                <tr>
-                  <td>#${o.id}</td>
-                  <td><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
-                  <td>${o.cart.filter(i=>i.standId===stand.id).map(i=>`${i.qty}x ${i.name}`).join(', ')}</td>
-                  <td><b>${money(o.cart.filter(i=>i.standId===stand.id).reduce((a,b)=>a+(b.price*b.qty),0))}</b></td>
-                  <td><span class="px-2 py-0.5 rounded-full text-xs font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
-                  <td><button class="btn2 !py-1 !px-2 text-xs" onclick="toggleOrderStatus('${o.id}')">${o.delivered?'Marcar Pendiente':'Marcar Entregado'}</button></td>
-                </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay pedidos recibidos.</td></tr>'}
-            </table>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm min-w-[500px]">
+                <tr><th>N°</th><th>Comprador</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
+                ${orders.length ? orders.map(o => `
+                  <tr>
+                    <td>#${o.id}</td>
+                    <td><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
+                    <td>${o.cart.filter(i=>i.standId===stand.id).map(i=>`${i.qty}x ${i.name}`).join(', ')}</td>
+                    <td><b>${money(o.cart.filter(i=>i.standId===stand.id).reduce((a,b)=>a+(b.price*b.qty),0))}</b></td>
+                    <td><span class="px-2 py-0.5 rounded-full text-xs font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
+                    <td><button class="btn2 !py-1 !px-2 text-xs" onclick="toggleOrderStatus('${o.id}')">${o.delivered?'Marcar Pendiente':'Marcar Entregado'}</button></td>
+                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay pedidos recibidos.</td></tr>'}
+              </table>
+            </div>
           </div>`;
       } else if (vendorTab === 'settings') {
         tabContent = `
-          <form class="card max-w-xl space-y-3" onsubmit="saveVendorSettings(event)">
+          <form class="card max-w-xl mx-auto space-y-3 text-left" onsubmit="saveVendorSettings(event)">
             <h3 class="disp text-xl font-bold">⚙️ Configuración del Stand</h3>
-            <input class="inp" name="name" value="${h(stand.name)}" required>
-            <input class="inp" name="rubro" value="${h(stand.rubro)}" required placeholder="Rubro">
-            <input class="inp" name="phone" value="${h(stand.phone)}" required>
-            <textarea class="inp" name="description" rows="3">${h(stand.description || '')}</textarea>
+            <input class="inp text-sm" name="name" value="${h(stand.name)}" required>
+            <input class="inp text-sm" name="rubro" value="${h(stand.rubro)}" required placeholder="Rubro">
+            <input class="inp text-sm" name="phone" value="${h(stand.phone)}" required>
+            <textarea class="inp text-sm" name="description" rows="3">${h(stand.description || '')}</textarea>
             
-            <label class="block text-sm font-bold">Logo del Emprendimiento:
-              <input type="file" id="settingsLogo" accept="image/*" class="inp mt-1 text-sm bg-white">
+            <label class="block text-xs sm:text-sm font-bold">Logo del Emprendimiento:
+              <input type="file" id="settingsLogo" accept="image/*" class="inp mt-1 text-xs bg-white">
             </label>
             ${stand.logo ? `<div class="w-16 h-16 rounded-full overflow-hidden bg-slate-100"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
 
-            <label class="block text-sm font-bold">Color del Stand: <input type="color" name="color" value="${stand.color || '#ff5a36'}" class="ml-2 align-middle"></label>
+            <label class="block text-xs sm:text-sm font-bold">Color del Stand: <input type="color" name="color" value="${stand.color || '#ff5a36'}" class="ml-2 align-middle h-8 w-14 rounded cursor-pointer"></label>
             <div class="bg-slate-50 p-3 rounded-xl border flex items-center justify-between">
               <div>
                 <b>Modo Vacaciones / Pausa</b>
@@ -631,20 +658,20 @@
               </div>
               <input type="checkbox" name="active" ${stand.active ? 'checked' : ''} class="w-5 h-5 accent-[#ff5a36]">
             </div>
-            <button class="btn w-full" id="saveSettingsBtn">Guardar Cambios</button>
+            <button class="btn text-sm py-2.5" id="saveSettingsBtn">Guardar Cambios</button>
           </form>`;
       }
 
       return `
-        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div class="flex items-center gap-3">
-            ${stand.logo ? `<div class="w-14 h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
-            <h1 class="disp text-3xl font-extrabold">⛺ ${h(stand.name)}</h1>
+            ${stand.logo ? `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+            <h1 class="disp text-2xl sm:text-3xl font-extrabold truncate">⛺ ${h(stand.name)}</h1>
           </div>
-          <div class="flex gap-2">
-            <button class="${vendorTab==='products'?'btn':'btn2'}" onclick="vendorTab='products'; route();">📦 Productos</button>
-            <button class="${vendorTab==='orders'?'btn':'btn2'}" onclick="vendorTab='orders'; route();">🧾 Pedidos</button>
-            <button class="${vendorTab==='settings'?'btn':'btn2'}" onclick="vendorTab='settings'; route();">⚙️ Mi Stand</button>
+          <div class="flex gap-1.5 w-full sm:w-auto overflow-x-auto pb-1">
+            <button class="${vendorTab==='products'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="vendorTab='products'; route();">📦 Productos</button>
+            <button class="${vendorTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="vendorTab='orders'; route();">🧾 Pedidos</button>
+            <button class="${vendorTab==='settings'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="vendorTab='settings'; route();">⚙️ Mi Stand</button>
           </div>
         </div>
         ${tabContent}`;
@@ -655,7 +682,7 @@
       if (!container) return;
       if (category === 'Ropa') {
         const sizes = existingSpecs.sizes || ['S', 'M', 'L', 'XL'];
-        container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles disponibles (Ropa):</label><div class="flex gap-2">${['S','M','L','XL','XXL'].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(s)?'checked':''}> ${s}</label>`).join('')}</div>`;
+        container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles disponibles (Ropa):</label><div class="flex flex-wrap gap-2">${['S','M','L','XL','XXL'].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(s)?'checked':''}> ${s}</label>`).join('')}</div>`;
       } else if (category === 'Calzado') {
         const sizes = existingSpecs.sizes || ['37', '38', '39', '40'];
         container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles (Calzado 35-41):</label><div class="flex flex-wrap gap-2">${[35,36,37,38,39,40,41].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(String(s))?'checked':''}> ${s}</label>`).join('')}</div>`;
@@ -783,7 +810,7 @@
         app.innerHTML = html;
       } catch (err) {
         console.error(err);
-        app.innerHTML = `<div class="card text-center py-10"><h2 class="text-xl font-bold">Ups, ocurrió un error.</h2><button class="btn mt-4" onclick="navigate('#/')">Volver al inicio</button></div>`;
+        app.innerHTML = `<div class="card text-center py-10"><h2 class="text-xl font-bold">Ups, ocurrió un error.</h2><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       }
       window.scrollTo(0, 0);
     }
