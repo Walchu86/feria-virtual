@@ -45,8 +45,6 @@
     const app = $('#app');
     const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
-    const final = p => Math.round(Number(p.price) * (1 - (Number(p.discount) || 0) / 100) * 100) / 100;
-    const col = c => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff5a36');
     const toast = m => {
       const t = $('#toast');
       t.textContent = m;
@@ -54,160 +52,56 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => t.classList.add('hidden'), 3500);
     };
-    const waNum = t => {
-      let d = String(t || '').replace(/\D/g, '').replace(/^0+/, '');
-      if (d.startsWith('549')) return d;
-      if (d.startsWith('54')) return '549' + d.slice(2);
-      return '549' + d;
-    };
-    const act = fn => async (...a) => {
-      try { await fn(...a); } catch (e) { console.error(e); toast(e.message || 'Ocurrió un error'); }
-    };
 
-    // ---------- Estado del Carrito ----------
-    let me = null;
     let cart = [];
     try {
       cart = JSON.parse(localStorage.getItem('feria_cart') || '[]');
       if (!Array.isArray(cart)) cart = [];
-      cart = cart.filter(i => i && Number.isFinite(+i.id) && i.qty > 0 && Number.isFinite(+i.price));
     } catch (e) { cart = []; }
-    
+
     const saveCart = () => {
       try { localStorage.setItem('feria_cart', JSON.stringify(cart)); } catch (e) {}
       renderNav();
     };
-    let ptab = 'prod';
-    let editing = null;
-    let afterRender = null;
 
     function renderNav() {
-      const n = cart.reduce((t, i) => t + i.qty, 0);
+      const n = cart.reduce((t, i) => t + (i.qty || 0), 0);
       $('#nav').innerHTML =
         `<button type="button" onclick="navigate('#/carrito')" class="px-3 py-2 rounded-xl bg-white/10">Carrito (${n})</button>` +
-        (me
-          ? `<button type="button" onclick="navigate('#/panel')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Mi stand</button>
-             <button type="button" onclick="logout()" class="px-3 py-2">Salir</button>`
-          : `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>
-             <button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`);
+        `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>` +
+        `<button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`;
     }
 
     window.navigate = path => {
-      if (location.hash === path) route();
-      else location.hash = path;
+      location.hash = path;
     };
-    const redirect = path => { location.replace(location.pathname + location.search + path); };
-
-    // ======================= VISTAS PÚBLICAS =======================
-    const notFound = (msg = 'No encontramos lo que buscás.') =>
-      `<div class="card text-center"><div class="text-5xl mb-2">🤷</div><p class="mb-3">${h(msg)}</p><button type="button" class="btn" onclick="navigate('#/')">Volver a la feria</button></div>`;
 
     async function homeView() {
-      // TODO: Reemplazar con tu llamada al nuevo backend para listar stands activos
-      const stands = []; 
       return `
         <section class="rounded-3xl bg-[#10263a] text-white p-6 md:p-10 mb-6">
           <h1 class="text-3xl md:text-5xl font-extrabold">Feria Virtual</h1>
-          <p class="mt-2 max-w-xl">Elegí un stand, mirá los productos y hacé tu pedido: lo coordinás directo con el vendedor por WhatsApp.</p>
+          <p class="mt-2 max-w-xl">Tu feria virtual lista para conectar con tu nuevo backend.</p>
         </section>
-        <h2 class="text-2xl font-extrabold mb-3">Stands</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          ${stands.length ? stands.map(s => `
-            <a class="tile" style="background:${col(s.color)}" href="#/stand/${s.id}">
-              <span class="text-4xl">🏪</span>
-              <b class="disp text-lg leading-tight">${h(s.name)}</b>
-              <span class="text-sm opacity-90">${h(s.rubro)}</span>
-            </a>`).join('') : '<p class="card col-span-full">Backend desconectado. Aquí se mostrarán los stands.</p>'}
-        </div>
-        <div class="card mt-8 flex flex-wrap items-center justify-between gap-3">
-          <div><b>¿Tenés un emprendimiento?</b><br>Abrí tu stand y vendé en la feria.</div>
-          <button type="button" class="btn" onclick="navigate('#/registro')">Crear mi stand</button>
+        <div class="card text-center py-10">
+          <h2 class="text-2xl font-extrabold mb-2">¡Dominio configurado con éxito! 🚀</h2>
+          <p class="text-slate-600">Los archivos ya están libres de conexiones viejas. Listos para empezar a programar.</p>
         </div>`;
     }
 
-    async function standView(id) {
-      return notFound('Stand en proceso de reconexión con el nuevo backend.');
-    }
-
-    window.addCart = id => { toast('Agregado al carrito 🛒'); };
-    window.chgQty = (id, d) => { route(); };
-    window.rmCart = id => { saveCart(); route(); };
-
-    function cartView() {
-      if (!cart.length) {
-        return `<div class="card text-center"><div class="text-5xl mb-2">🛒</div><h1 class="text-xl font-extrabold mb-3">Tu carrito está vacío</h1><button type="button" class="btn" onclick="navigate('#/')">Ver los stands</button></div>`;
-      }
-      return `<h1 class="text-3xl font-extrabold mb-4">Tu carrito</h1>`;
-    }
-
-    window.placeOrder = act(async e => { e.preventDefault(); });
-
-    // ======================= AUTENTICACIÓN Y PANEL =======================
-    function authView(reg) {
-      return `
-        <form class="card max-w-xl mx-auto grid md:grid-cols-2 gap-3" onsubmit="doAuth(event, ${reg})">
-          <h1 class="md:col-span-2 text-2xl font-extrabold">${reg ? 'Abrí tu stand' : 'Ingresar a mi stand'}</h1>
-          ${reg ? `
-            <input class="inp" name="name" placeholder="Nombre de tu negocio" required maxlength="60">
-            <input class="inp" name="rubro" placeholder="Rubro" required maxlength="40">
-            <input class="inp" name="phone" type="tel" placeholder="WhatsApp" required maxlength="30">
-            <textarea class="inp" name="description" placeholder="Descripción"></textarea>` : ''}
-          <input class="inp" type="email" name="email" placeholder="Email" required>
-          <input class="inp" type="password" name="password" placeholder="Clave" required minlength="6">
-          <button id="authBtn" class="btn md:col-span-2">${reg ? 'Crear mi stand' : 'Entrar'}</button>
-        </form>`;
-    }
-
-    window.doAuth = act(async (e, reg) => { e.preventDefault(); });
-    window.logout = act(async () => { navigate('#/'); });
-
-    async function panelView() {
-      return `<div class="card"><h1 class="text-2xl font-extrabold">Panel de Vendedor</h1><p>Conectá tu nuevo backend aquí.</p></div>`;
-    }
-
-    window.setPTab = t => { ptab = t; editing = null; route(); };
-    window.editProd = id => { editing = id; route(); };
-    window.calcFinal = f => {};
-
-    // Compresión de fotos integrada
-    const shrink = file => new Promise((res, rej) => {
-      const img = new Image();
-      const u = URL.createObjectURL(file);
-      img.onload = () => {
-        const k = Math.min(1, 1200 / Math.max(img.width, img.height));
-        const c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.width * k));
-        c.height = Math.max(1, Math.round(img.height * k));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(u);
-        c.toBlob(b => (b ? res(b) : rej(new Error('Error al procesar foto'))), 'image/jpeg', 0.82);
-      };
-      img.src = u;
-    });
-
-    window.upImg = act(async inp => {});
-    window.saveProd = act(async e => { e.preventDefault(); });
-    window.togProd = act(async id => {});
-    window.delProd = act(async id => {});
-    window.saveStand = act(async e => { e.preventDefault(); });
-
-    // ======================= ENRUTADOR =======================
     async function route() {
-      const [p = '', arg = ''] = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
+      const [p = ''] = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
       try {
         let html = '';
-        if (p === '') html = await homeView();
-        else if (p === 'stand') html = await standView(Number(arg));
-        else if (p === 'carrito') html = cartView();
-        else if (p === 'ingresar' || p === 'registro') html = authView(p === 'registro');
-        else if (p === 'panel') html = await panelView();
+        if (p === '' || p === '#') html = await homeView();
+        else if (p === 'carrito') html = `<div class="card"><h1 class="text-2xl font-extrabold mb-2">Carrito</h1><p>Tu carrito está vacío.</p></div>`;
+        else if (p === 'ingresar' || p === 'registro') html = `<div class="card"><h1 class="text-2xl font-extrabold mb-2">Acceso / Registro</h1><p>Módulo listo para configurar.</p></div>`;
         else html = await homeView();
         app.innerHTML = html;
-        if (afterRender) afterRender();
       } catch (e) {
         app.innerHTML = `<div class="card">Error al cargar la vista.</div>`;
       }
     }
+
     window.route = route;
     window.addEventListener('hashchange', route);
 
