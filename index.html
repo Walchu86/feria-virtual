@@ -15,11 +15,10 @@
     .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; transition: background .2s; width: 100%; }
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
-    .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
+    .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 14px; display: inline-block; text-align: center; cursor: pointer; border: none; }
     .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; width: 100%; }
     .card { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(16,38,58,.06); width: 100%; box-sizing: border-box; }
     
-    /* Tarjeta de stand optimizada mobile-first */
     .stand-card { background: #fff; border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 2px solid #e4f0f1; transition: all .2s; text-decoration: none; color: #10263a; }
     .stand-card:hover { border-color: #ff5a36; transform: translateY(-2px); }
 
@@ -30,12 +29,12 @@
 </head>
 <body class="min-h-screen flex flex-col">
   <header class="bg-[#10263a] text-white sticky top-0 z-30 shadow-md">
-    <div class="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
-      <a href="#/" class="flex items-center gap-2 min-w-0">
-        <span class="text-2xl shrink-0">🎪</span>
-        <span class="disp font-extrabold text-base sm:text-xl truncate tracking-tight">Feria Virtual</span>
+    <div class="max-w-6xl mx-auto px-2 sm:px-4 h-16 flex items-center justify-between gap-1">
+      <a href="#/" class="flex items-center gap-1.5 min-w-0 shrink">
+        <span class="text-xl sm:text-2xl shrink-0">🎪</span>
+        <span class="disp font-extrabold text-xs sm:text-xl truncate tracking-tight">Feria Virtual</span>
       </a>
-      <nav id="nav" class="flex items-center gap-1 text-xs sm:text-sm font-bold shrink-0"></nav>
+      <nav id="nav" class="flex items-center gap-1 text-[11px] sm:text-sm font-bold shrink-0"></nav>
     </div>
   </header>
 
@@ -145,14 +144,14 @@
       const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
       const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
       $('#nav').innerHTML = `
-        <button type="button" onclick="toggleCart(true)" class="px-2 py-1.5 rounded-xl bg-white/10 flex items-center gap-1 shrink-0 text-xs">
-          🛒 (${totalItems}) <span class="hidden sm:inline">${money(totalPrice)}</span>
+        <button type="button" onclick="toggleCart(true)" class="px-1.5 sm:px-2.5 py-1.5 rounded-xl bg-white/10 flex items-center gap-1 shrink-0 text-xs">
+          🛒 (${totalItems}) <span class="hidden md:inline">${money(totalPrice)}</span>
         </button>` +
         (currentVendor 
-          ? `<button type="button" onclick="navigate('#/panel')" class="px-2.5 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0">Mi Stand</button>
-             <button type="button" onclick="logout()" class="px-1.5 py-1.5 opacity-80 hover:opacity-100 text-xs shrink-0">Salir</button>`
-          : `<button type="button" onclick="navigate('#/ingresar')" class="px-2 py-1.5 text-xs shrink-0">Vendedor</button>
-             <button type="button" onclick="navigate('#/registro')" class="px-2.5 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0">Crear Stand</button>`);
+          ? `<button type="button" onclick="navigate('#/panel')" class="px-2 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0 font-bold">Mi Stand</button>
+             <button type="button" onclick="logout()" class="px-1 py-1.5 opacity-80 hover:opacity-100 text-xs shrink-0">Salir</button>`
+          : `<button type="button" onclick="navigate('#/ingresar')" class="px-1.5 sm:px-2 py-1.5 text-xs shrink-0">Vendedor</button>
+             <button type="button" onclick="navigate('#/registro')" class="px-2 sm:px-3 py-1.5 rounded-xl bg-[#ff5a36] text-xs shrink-0 font-bold">Crear Stand</button>`);
     }
 
     window.navigate = hash => { location.hash = hash; };
@@ -251,7 +250,7 @@
                 <p class="text-xs text-slate-500 truncate">${h(s.description || 'Ver productos →')}</p>
               </div>
               <span class="text-slate-400 font-bold text-lg pr-1">›</span>
-            </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No hay stands activos todavía. (Recordá aprobarlos desde tu panel de admin).</p>'}
+            </a>`).join('') : '<p class="card col-span-full text-center py-8 text-slate-500">No hay stands activos todavía. Aprobálos desde tu panel de administración.</p>'}
         </div>
 
         <div class="card mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
@@ -293,7 +292,7 @@
         <div class="rounded-3xl p-5 sm:p-6 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
           ${stand.logo ? `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
           <div class="flex-1 min-w-0 w-full">
-            <button type="button" class="underline text-xs sm:text-sm mb-2 font-bold block mx-auto sm:mx-0" onclick="navigate('#/')">← Volver a la feria</button>
+            <button type="button" class="underline text-xs sm:text-sm mb-2 font-bold block mx-auto sm:mx-0" onclick="navigate('#/')">← Volver al inicio</button>
             <h1 class="text-2xl sm:text-3xl font-extrabold flex flex-col sm:flex-row items-center sm:items-center gap-2">${h(stand.name)} <span class="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full uppercase">${h(stand.rubro)}</span></h1>
             <p class="opacity-90 text-xs sm:text-sm mt-1 max-w-xl">${h(stand.description || '')}</p>
             <p class="text-xs sm:text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
@@ -470,7 +469,7 @@
             </label>` : ''}
           <input class="inp text-sm" name="email" type="email" placeholder="Correo electrónico" required>
           <input class="inp text-sm" name="password" type="password" placeholder="Contraseña" required minlength="6">
-          <button class="btn text-base py-3" id="submitAuthBtn">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
+          <button class="btn text-base py-3" id="submitAuthBtn">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar al Panel'}</button>
           <button type="button" class="w-full text-center text-xs sm:text-sm underline text-slate-600 pt-2" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
         </form>`;
     }
@@ -521,7 +520,7 @@
           email: f.email,
           password: f.password,
           color: '#ff5a36',
-          active: false,
+          active: false, // <--- Mantenido en false como pediste (requiere aprobación en admin)
           receipt: receiptUrl,
           logo: logoUrl,
           created: Date.now()
@@ -535,7 +534,7 @@
           <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
             <div class="text-6xl">⏳</div>
             <h1 class="disp text-2xl font-extrabold">¡Stand Creado con Éxito!</h1>
-            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifique, se activará en la feria.</p>
+            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifiques en tu panel, se activará en la feria.</p>
             <button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al Inicio</button>
           </div>`;
       } else {
@@ -570,7 +569,7 @@
           <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
             <div class="text-5xl">⏳</div>
             <h1 class="disp text-2xl font-bold">Stand Pendiente de Activación</h1>
-            <p class="text-sm text-slate-600">Walchu está verificando tu comprobante de transferencia a feria.virtual. Pronto tu stand estará visible en la feria.</p>
+            <p class="text-sm text-slate-600">Tu stand está pendiente de aprobación por el administrador.</p>
             <button class="btn max-w-xs mx-auto" onclick="logout()">Cerrar Sesión</button>
           </div>`;
       }
