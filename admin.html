@@ -16,28 +16,31 @@
     .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
-    .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
     .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 0 #c5d8dc; }
-    th { text-align: left; padding: 6px 8px; font-weight: 700; }
-    td { padding: 6px 8px; border-top: 1px solid #e4f0f1; vertical-align: top; }
   </style>
 </head>
 <body>
   <header class="bg-[#10263a] text-white">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <span class="disp font-extrabold text-xl">🔒 Administración · Feria Virtual</span>
-      <button id="logoutBtn" type="button" class="px-3 py-2 font-bold hidden" onclick="logout()">Salir</button>
+      <button id="logoutBtn" type="button" class="px-3 py-2 font-bold hidden">Salir</button>
     </div>
   </header>
 
-  <main id="app" class="max-w-6xl mx-auto px-4 py-6"><p class="card">Cargando…</p></main>
+  <main id="app" class="max-w-6xl mx-auto px-4 py-6">
+    <form class="card max-w-md mx-auto space-y-3" onsubmit="event.preventDefault(); alert('Panel listo para configurar');">
+      <h1 class="text-2xl font-extrabold">Acceso de administrador</h1>
+      <input class="inp" type="email" name="email" placeholder="Email" required autocomplete="email">
+      <input class="inp" type="password" name="password" placeholder="Clave" required autocomplete="current-password">
+      <button type="submit" class="btn w-full">Entrar</button>
+    </form>
+  </main>
+
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center"></div>
 
   <script>
     const $ = s => document.querySelector(s);
     const app = $('#app');
-    const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
     const toast = m => {
       const t = $('#toast');
       t.textContent = m;
@@ -45,26 +48,6 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => t.classList.add('hidden'), 3500);
     };
-
-    let tab = 'stands';
-
-    function loginView(msg) {
-      app.innerHTML = `
-        <form class="card max-w-md mx-auto space-y-3" onsubmit="login(event)">
-          <h1 class="text-2xl font-extrabold">Acceso de administrador</h1>
-          ${msg ? `<p class="text-red-600 font-bold">${h(msg)}</p>` : ''}
-          <input class="inp" type="email" name="email" placeholder="Email" required>
-          <input class="inp" type="password" name="password" placeholder="Clave" required>
-          <button id="loginBtn" class="btn w-full">Entrar</button>
-        </form>`;
-    }
-
-    window.login = async e => { e.preventDefault(); };
-    window.logout = async () => { loginView(); };
-    window.setActive = async (id, active) => {};
-
-    // Vista inicial limpia con toda la estructura visual lista
-    loginView();
   </script>
 </body>
 </html>
