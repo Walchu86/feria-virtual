@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Feria Virtual</title>
+  <title>Feria Virtual · feriavirtual.shop</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎪%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,7 @@
     h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
     .inp { width: 100%; border: 2px solid #c5d8dc; border-radius: 12px; padding: 10px 12px; background: #fff; }
     .inp:focus { outline: 3px solid #ff5a36; border-color: #ff5a36; }
-    .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
+    .btn { background: #ff5a36; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; transition: background .2s; }
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
     .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; border: none; }
@@ -20,31 +20,86 @@
     .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 0 #c5d8dc; }
     .tile { aspect-ratio: 1; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .15s; cursor: pointer; text-decoration: none; }
     .tile:hover { transform: translateY(-4px) rotate(-1deg); }
-    th { text-align: left; padding: 6px 8px; font-weight: 700; }
-    td { padding: 6px 8px; border-top: 1px solid #e4f0f1; vertical-align: top; }
+    /* Lupa / Zoom modal */
+    .zoom-container { overflow: hidden; position: relative; cursor: zoom-in; }
+    .zoom-container img { transition: transform 0.3s ease; }
+    .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   </style>
 </head>
 <body>
-  <header class="bg-[#10263a] text-white sticky top-0 z-20">
+  <header class="bg-[#10263a] text-white sticky top-0 z-30 shadow-md">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
       <a href="#/" class="flex items-center gap-2">
         <span class="text-2xl">🎪</span>
         <span class="disp font-extrabold text-xl">Feria Virtual</span>
       </a>
-      <nav id="nav" class="flex items-center gap-1 text-sm font-bold"></nav>
+      <nav id="nav" class="flex items-center gap-2 text-sm font-bold"></nav>
     </div>
   </header>
 
-  <main id="app" class="max-w-6xl mx-auto px-4 py-6"><p class="card">Cargando…</p></main>
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center"></div>
+  <main id="app" class="max-w-6xl mx-auto px-4 py-6 min-h-[75vh]"><p class="card">Cargando plataforma…</p></main>
+
+  <!-- Carrito Deslizante Lateral (Slide-over Drawer) -->
+  <div id="cartDrawer" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity" onclick="toggleCart(false)">
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white p-6 shadow-2xl flex flex-col overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-4 border-b border-[#e4f0f1]">
+        <h2 class="disp text-2xl font-extrabold">🛒 Tu Carrito</h2>
+        <button type="button" class="btn2 !px-3 !py-1 text-sm" onclick="toggleCart(false)">✕</button>
+      </div>
+      <div id="cartDrawerContent" class="flex-1 py-4 space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- Modal Lupa / Zoom de Producto -->
+  <div id="zoomModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-4" onclick="closeZoom()">
+    <div class="bg-white rounded-3xl p-4 max-w-lg w-full relative overflow-hidden" onclick="event.stopPropagation()">
+      <button type="button" class="absolute top-3 right-3 bg-slate-200 rounded-full w-8 h-8 font-bold flex items-center justify-center" onclick="closeZoom()">✕</button>
+      <div id="zoomContent" class="text-center"></div>
+    </div>
+  </div>
+
+  <footer class="bg-[#10263a] text-white py-8 text-center text-sm mt-12">
+    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
+    <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
+    <a href="https://wa.me/5493794042319?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 text-xs bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
+  </footer>
+
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center shadow-lg"></div>
 
   <script>
     const ADMIN_WHATSAPP = '5493794042319';
+    const PERSONAL_PAY_ALIAS = 'FERIA.VIRTUAL.WALCHU';
+    const PERSONAL_PAY_CBU = '0000003100012345678999';
+
+    // --- BASE DE DATOS LOCALSTORAGE ---
+    const DB = {
+      getStands: () => JSON.parse(localStorage.getItem('fv_stands') || '[]'),
+      saveStands: d => localStorage.setItem('fv_stands', JSON.stringify(d)),
+      getProducts: () => JSON.parse(localStorage.getItem('fv_products') || '[]'),
+      saveProducts: d => localStorage.setItem('fv_products', JSON.stringify(d)),
+      getOrders: () => JSON.parse(localStorage.getItem('fv_orders') || '[]'),
+      saveOrders: d => localStorage.setItem('fv_orders', JSON.stringify(d)),
+      getReviews: () => JSON.parse(localStorage.getItem('fv_reviews') || '[]'),
+      saveReviews: d => localStorage.setItem('fv_reviews', JSON.stringify(d)),
+    };
+
+    // Sembrar datos iniciales de prueba si está vacío
+    if (!DB.getStands().length) {
+      DB.saveStands([
+        { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, created: Date.now() },
+        { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, created: Date.now() }
+      ]);
+      DB.saveProducts([
+        { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
+        { id: 102, stand_id: 2, name: 'Remera Oversize Algodón', category: 'Ropa', price: 12000, discount: 10, image: '', description: 'Excelente calidad.', active: true, specs: { sizes: ['S', 'M', 'L', 'XL'] } }
+      ]);
+    }
 
     const $ = s => document.querySelector(s);
     const app = $('#app');
     const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    const finalPrice = p => Math.round(Number(p.price) * (1 - (Number(p.discount) || 0) / 100));
     const toast = m => {
       const t = $('#toast');
       t.textContent = m;
@@ -53,63 +108,633 @@
       toast._t = setTimeout(() => t.classList.add('hidden'), 3500);
     };
 
-    let cart = [];
-    try {
-      cart = JSON.parse(localStorage.getItem('feria_cart') || '[]');
-      if (!Array.isArray(cart)) cart = [];
-    } catch (e) { cart = []; }
+    let cart = JSON.parse(localStorage.getItem('fv_cart') || '[]');
+    let currentVendor = JSON.parse(localStorage.getItem('fv_session') || 'null');
 
     const saveCart = () => {
-      try { localStorage.setItem('feria_cart', JSON.stringify(cart)); } catch (e) {}
+      localStorage.setItem('fv_cart', JSON.stringify(cart));
       renderNav();
     };
 
     function renderNav() {
-      const n = cart.reduce((t, i) => t + (i.qty || 0), 0);
-      $('#nav').innerHTML =
-        `<button type="button" onclick="navigate('#/carrito')" class="px-3 py-2 rounded-xl bg-white/10">Carrito (${n})</button>` +
-        `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>` +
-        `<button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`;
+      const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
+      const totalPrice = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      $('#nav').innerHTML = `
+        <button type="button" onclick="toggleCart(true)" class="px-3 py-2 rounded-xl bg-white/10 flex items-center gap-1.5">
+          🛒 Carrito (${totalItems}) <span class="text-xs opacity-80">${money(totalPrice)}</span>
+        </button>` +
+        (currentVendor 
+          ? `<button type="button" onclick="navigate('#/panel')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Mi Stand</button>
+             <button type="button" onclick="logout()" class="px-3 py-2 opacity-80 hover:opacity-100">Salir</button>`
+          : `<button type="button" onclick="navigate('#/ingresar')" class="px-3 py-2">Soy vendedor</button>
+             <button type="button" onclick="navigate('#/registro')" class="px-3 py-2 rounded-xl bg-[#ff5a36]">Crear mi stand</button>`);
     }
 
-    window.navigate = path => {
-      location.hash = path;
+    window.navigate = hash => { location.hash = hash; };
+
+    // --- CARRITO DESLIZANTE ---
+    window.toggleCart = show => {
+      const drawer = $('#cartDrawer');
+      if (show) {
+        renderCartDrawerContent();
+        drawer.classList.remove('hidden');
+      } else {
+        drawer.classList.add('hidden');
+      }
     };
 
-    async function homeView() {
-      return `
-        <section class="rounded-3xl bg-[#10263a] text-white p-6 md:p-10 mb-6">
-          <h1 class="text-3xl md:text-5xl font-extrabold">Feria Virtual</h1>
-          <p class="mt-2 max-w-xl">Tu feria virtual lista para conectar con tu nuevo backend.</p>
-        </section>
-        <div class="card text-center py-10">
-          <h2 class="text-2xl font-extrabold mb-2">¡Dominio configurado con éxito! 🚀</h2>
-          <p class="text-slate-600">Los archivos ya están libres de conexiones viejas. Listos para empezar a programar.</p>
+    function renderCartDrawerContent() {
+      const cdc = $('#cartDrawerContent');
+      if (!cart.length) {
+        cdc.innerHTML = `<div class="text-center py-12"><div class="text-5xl mb-2">🛒</div><p class="font-bold">Tu carrito está vacío</p><button type="button" class="btn mt-4" onclick="toggleCart(false); navigate('#/')">Ver stands</button></div>`;
+        return;
+      }
+      const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      cdc.innerHTML = `
+        <div class="space-y-4 flex-1">
+          ${cart.map((item, idx) => `
+            <div class="flex items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div>
+                <b class="text-sm block">${h(item.name)}</b>
+                <span class="text-xs text-slate-500">🏪 ${h(item.standName)} · ${money(item.price)} c/u</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="bg-slate-200 px-2 py-0.5 rounded font-bold" onclick="chgCartQty(${idx}, -1)">−</button>
+                <span class="text-sm font-bold w-5 text-center">${item.qty}</span>
+                <button type="button" class="bg-slate-200 px-2 py-0.5 rounded font-bold" onclick="chgCartQty(${idx}, 1)">+</button>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="pt-4 border-t border-slate-200 mt-auto">
+          <div class="flex justify-between items-center mb-4"><span class="font-bold text-lg">Total acumulado</span><span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(total)}</span></div>
+          <button type="button" class="btn w-full text-lg mb-2" onclick="toggleCart(false); navigate('#/checkout')">Iniciar Pedido</button>
+          <button type="button" class="btn2 w-full text-sm !bg-slate-200 !text-[#10263a]" onclick="cart=[]; saveCart(); toggleCart(false); toast('Carrito vaciado');">Vaciar carrito</button>
         </div>`;
     }
 
-    async function route() {
-      const [p = ''] = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
-      try {
-        let html = '';
-        if (p === '' || p === '#') html = await homeView();
-        else if (p === 'carrito') html = `<div class="card"><h1 class="text-2xl font-extrabold mb-2">Carrito</h1><p>Tu carrito está vacío.</p></div>`;
-        else if (p === 'ingresar' || p === 'registro') html = `<div class="card"><h1 class="text-2xl font-extrabold mb-2">Acceso / Registro</h1><p>Módulo listo para configurar.</p></div>`;
-        else html = await homeView();
-        app.innerHTML = html;
-      } catch (e) {
-        app.innerHTML = `<div class="card">Error al cargar la vista.</div>`;
-      }
+    window.chgCartQty = (idx, d) => {
+      cart[idx].qty += d;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      saveCart();
+      renderCartDrawerContent();
+    };
+
+    window.addToCart = (productId, standId, standName, name, price) => {
+      const existing = cart.find(i => i.id === productId);
+      if (existing) existing.qty++;
+      else cart.push({ id: productId, standId, standName, name, price, qty: 1 });
+      saveCart();
+      toast('¡Agregado al carrito 🛒!');
+      toggleCart(true);
+    };
+
+    // --- LUPA / ZOOM MODAL ---
+    window.openZoom = (imgUrl, name, desc) => {
+      $('#zoomContent').innerHTML = `
+        <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-64" onclick="this.classList.toggle('zoomed')">
+          ${imgUrl ? `<img src="${h(imgUrl)}" class="w-full h-full object-contain">` : '<span class="text-6xl">📦</span>'}
+        </div>
+        <h3 class="disp text-xl font-bold">${h(name)}</h3>
+        <p class="text-sm text-slate-600 mt-1">${h(desc || 'Sin descripción adicional.')}</p>
+        <p class="text-xs text-slate-400 mt-2">💡 Tocá la foto para hacer zoom.</p>`;
+      $('#zoomModal').classList.remove('hidden');
+    };
+    window.closeZoom = () => $('#zoomModal').classList.add('hidden');
+
+    // --- VISTAS PRINCIPALES ---
+    async function homeView() {
+      const stands = DB.getStands().filter(s => s.active);
+      return `
+        <section class="rounded-3xl bg-[#10263a] text-white p-6 md:p-10 mb-6 shadow-xl relative overflow-hidden">
+          <h1 class="text-3xl md:text-5xl font-extrabold">Feria Virtual 🎪</h1>
+          <p class="mt-2 max-w-xl text-slate-300">Apoyá a los emprendedores locales. Elegí un stand, mirá sus productos y coordiná tu compra directo por WhatsApp.</p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <input id="searchInput" class="inp max-w-sm !bg-white/10 !text-white placeholder:text-slate-400 !border-white/20" placeholder="🔍 ¿Qué estás buscando hoy?" oninput="filterStands(this.value)">
+          </div>
+        </section>
+        <h2 class="text-2xl font-extrabold mb-4">Stands Activos</h2>
+        <div id="standsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          ${stands.length ? stands.map(s => `
+            <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
+              <span class="text-4xl">⛺</span>
+              <b class="disp text-lg leading-tight">${h(s.name)}</b>
+              <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
+            </a>`).join('') : '<p class="card col-span-full text-center py-8">No hay stands publicados todavía.</p>'}
+        </div>
+        <div class="card mt-10 flex flex-wrap items-center justify-between gap-4 bg-[#f3f9fa] border-2 border-[#c5d8dc]">
+          <div>
+            <h3 class="disp text-xl font-bold">¿Tenés un emprendimiento?</h3>
+            <p class="text-sm text-slate-600">Abrí tu stand en la feria por $15.000/mes + 5% comisión semanal.</p>
+          </div>
+          <button type="button" class="btn" onclick="navigate('#/registro')">Crear mi stand</button>
+        </div>`;
     }
 
-    window.route = route;
-    window.addEventListener('hashchange', route);
+    window.filterStands = query => {
+      const q = query.toLowerCase();
+      const grid = $('#standsGrid');
+      if (!grid) return;
+      const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)));
+      grid.innerHTML = stands.length ? stands.map(s => `
+        <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
+          <span class="text-4xl">⛺</span>
+          <b class="disp text-lg leading-tight">${h(s.name)}</b>
+          <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
+        </a>`).join('') : '<p class="card col-span-full text-center py-8">No se encontraron stands con esa búsqueda.</p>';
+    };
 
-    (async () => {
-      renderNav();
-      if (!location.hash) location.replace('#/');
+    async function standView(id) {
+      const stand = DB.getStands().find(s => s.id === Number(id));
+      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-2xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      const products = DB.getProducts().filter(p => p.stand_id === stand.id && p.active);
+      const reviews = DB.getReviews().filter(r => r.stand_id === stand.id);
+      const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
+
+      return `
+        <div class="rounded-3xl p-6 mb-6 text-white shadow-lg" style="background:${h(stand.color || '#ff5a36')}">
+          <button type="button" class="underline text-sm mb-3 font-bold" onclick="navigate('#/')">← Volver a la feria</button>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 class="text-3xl font-extrabold flex items-center gap-2">⛺ ${h(stand.name)} <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full">${h(stand.rubro)}</span></h1>
+              <p class="opacity-90 mt-1 max-w-xl">${h(stand.description || '')}</p>
+              <p class="text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
+            </div>
+            ${stand.phone ? `<a class="btnwa" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a>` : ''}
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-extrabold mb-4">Productos del Stand</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          ${products.length ? products.map(p => {
+            const finalP = finalPrice(p);
+            return `
+              <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md">
+                <div class="aspect-square bg-slate-100 relative cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
+                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-4xl">📦</div>'}
+                  <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-sm">🔍 Ver con lupa</div>
+                </div>
+                <div class="p-4 flex-1 flex flex-col">
+                  <span class="text-xs text-slate-500 uppercase font-bold">${h(p.category)}</span>
+                  <b class="text-base leading-tight mt-1 mb-2">${h(p.name)}</b>
+                  ${p.specs && p.specs.sizes ? `<p class="text-xs text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
+                  ${p.specs && p.specs.measures ? `<p class="text-xs text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
+                  <div class="mt-auto pt-2">
+                    ${p.discount > 0 ? `<s class="text-slate-400 text-xs">${money(p.price)}</s> <span class="text-green-600 font-bold text-xs">-${p.discount}%</span><br>` : ''}
+                    <b class="disp text-xl text-[#ff5a36]">${money(finalP)}</b>
+                    <button type="button" class="btn w-full mt-3 text-sm py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar al Carrito</button>
+                  </div>
+                </div>
+              </div>`;
+          }).join('') : '<p class="card col-span-full text-center py-8">Este stand aún no tiene productos publicados.</p>'}
+        </div>
+
+        <div class="card mt-10 max-w-xl">
+          <h3 class="disp text-xl font-bold mb-3">⭐ Calificá a este Stand</h3>
+          <form onsubmit="submitReview(event, ${stand.id})" class="space-y-3">
+            <input class="inp" name="author" placeholder="Tu nombre" required>
+            <select class="inp" name="rating" required>
+              <option value="5">⭐⭐⭐⭐⭐ Excelente (5/5)</option>
+              <option value="4">⭐⭐⭐⭐ Muy Bueno (4/5)</option>
+              <option value="3">⭐⭐⭐ Bueno (3/5)</option>
+              <option value="2">⭐⭐ Regular (2/5)</option>
+              <option value="1">⭐ Malo (1/5)</option>
+            </select>
+            <textarea class="inp" name="comment" rows="2" placeholder="Escribí tu opinión sobre la atención y el producto..." required></textarea>
+            <button class="btn w-full">Enviar opinión</button>
+          </form>
+        </div>`;
+    }
+
+    window.submitReview = (e, standId) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const reviews = DB.getReviews();
+      reviews.push({ stand_id: standId, author: f.author, rating: Number(f.rating), comment: f.comment, date: Date.now() });
+      DB.saveReviews(reviews);
+      toast('¡Gracias por calificar al stand!');
       route();
-    })();
+    };
+
+    // --- CHECKOUT & WHATSAPP REDIRECT ---
+    function checkoutView() {
+      if (!cart.length) return navigate('#/');
+      const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      return `
+        <div class="card max-w-xl mx-auto shadow-xl">
+          <h1 class="disp text-2xl font-extrabold mb-4">Finalizar Pedido</h1>
+          <form onsubmit="placeOrder(event)" class="space-y-4">
+            <input class="inp" name="name" placeholder="Tu Nombre y Apellido" required>
+            <input class="inp" name="phone" type="tel" placeholder="Tu WhatsApp (con característica, ej: 379...)" required>
+            <textarea class="inp" name="notes" rows="3" placeholder="Notas de entrega (dirección, horario, si preferís transferencia o efectivo...)"></textarea>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex justify-between items-center"><span class="font-bold">Total a abonar</span><span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(total)}</span></div>
+              <p class="text-xs text-slate-500 mt-1">Al confirmar, el sistema generará un mensaje automático para enviarlo por WhatsApp a cada vendedor.</p>
+            </div>
+            <button class="btn w-full text-lg py-3">Confirmar y Enviar Pedido por WhatsApp</button>
+          </form>
+        </div>`;
+    }
+
+    window.placeOrder = e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const orders = DB.getOrders();
+      const orderId = Date.now().toString().slice(-6);
+      const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+
+      // Agrupar por stand
+      const byStand = {};
+      cart.forEach(i => {
+        byStand[i.standId] = byStand[i.standId] || { name: i.standName, items: [] };
+        byStand[i.standId].items.push(i);
+      });
+
+      orders.push({ id: orderId, buyer: f, cart: [...cart], total, status: 'Pendiente', delivered: false, date: Date.now() });
+      DB.saveOrders(orders);
+
+      // Abrir WhatsApp para cada vendedor involucrado
+      Object.keys(byStand).forEach(standId => {
+        const stand = DB.getStands().find(s => s.id === Number(standId));
+        if (stand && stand.phone) {
+          const st = byStand[standId];
+          const txt = `Hola ${stand.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
+            st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
+            `\n\nTotal Stand: ${money(st.items.reduce((a,b)=>a+(b.price*b.qty),0))}` +
+            (f.notes ? `\nNotas: ${f.notes}` : '') +
+            `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
+          window.open(`https://wa.me/${stand.phone}?text=${encodeURIComponent(txt)}`, '_blank');
+        }
+      });
+
+      cart = [];
+      saveCart();
+      app.innerHTML = `
+        <div class="card max-w-lg mx-auto text-center py-10">
+          <div class="text-6xl mb-3">🎉</div>
+          <h1 class="disp text-3xl font-extrabold mb-2">¡Pedido #${orderId} Registrado!</h1>
+          <p class="text-slate-600 mb-6">Se abrieron los chats de WhatsApp con cada vendedor para coordinar el pago y la entrega.</p>
+          <button type="button" class="btn" onclick="navigate('#/')">Volver a la Feria</button>
+        </div>`;
+    };
+
+    // --- REGISTRO Y VENDEDOR (AUTH Y PANEL) ---
+    function authView(isReg) {
+      return `
+        <form class="card max-w-xl mx-auto space-y-4 shadow-xl" onsubmit="handleAuth(event, ${isReg})">
+          <h1 class="disp text-2xl font-extrabold">${isReg ? '⛺ Creá tu Stand en la Feria' : '🔐 Ingresar como Vendedor'}</h1>
+          ${isReg ? `
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-sm text-amber-900">
+              <b>Modelo de Negocio:</b> Cuota mensual de <b>$15.000 ARS</b> + 5% comisión semanal sobre ventas.
+            </div>
+            <input class="inp" name="name" placeholder="Nombre de tu Emprendimiento" required>
+            <select class="inp" name="rubro" required>
+              <option value="">Seleccioná tu Rubro...</option>
+              <option value="Comida">Comida / Gastronomía</option>
+              <option value="Ropa">Ropa / Indumentaria</option>
+              <option value="Calzado">Calzado</option>
+              <option value="Manualidades">Manualidades / Decoración</option>
+              <option value="Accesorios">Accesorios y otros</option>
+            </select>
+            <input class="inp" name="phone" type="tel" placeholder="Tu WhatsApp (con característica)" required>
+            <textarea class="inp" name="description" rows="2" placeholder="Breve descripción de lo que vendés..."></textarea>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+              <p class="font-bold mb-1">Datos para transferir los $15.000 de alta (Personal Pay):</p>
+              <p>Alias: <b>${PERSONAL_PAY_ALIAS}</b></p>
+              <p>CBU: <b>${PERSONAL_PAY_CBU}</b></p>
+            </div>
+            <label class="block text-sm font-bold">Subir comprobante de transferencia (foto o captura):
+              <input type="file" id="receiptFile" accept="image/*" class="inp mt-1 text-sm bg-white" required>
+            </label>` : ''}
+          <input class="inp" name="email" type="email" placeholder="Correo electrónico" required>
+          <input class="inp" name="password" type="password" placeholder="Contraseña" required minlength="6">
+          <button class="btn w-full text-lg">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
+          <button type="button" class="w-full text-center text-sm underline text-slate-600" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
+        </form>`;
+    }
+
+    window.handleAuth = async (e, isReg) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const stands = DB.getStands();
+
+      if (isReg) {
+        const fileInput = $('#receiptFile');
+        let receiptUrl = '';
+        if (fileInput && fileInput.files[0]) {
+          receiptUrl = await toBase64(fileInput.files[0]);
+        }
+        const newStand = {
+          id: Date.now(),
+          name: f.name,
+          rubro: f.rubro,
+          phone: f.phone,
+          description: f.description,
+          email: f.email,
+          password: f.password,
+          color: '#ff5a36',
+          active: false, // Pendiente de aprobación del admin
+          receipt: receiptUrl,
+          created: Date.now()
+        };
+        stands.push(newStand);
+        DB.saveStands(stands);
+
+        // Alerta WhatsApp para Walchu
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $15.000. Por favor, aprobámelo.')}`, '_blank');
+        
+        app.innerHTML = `
+          <div class="card max-w-lg mx-auto text-center py-10">
+            <div class="text-6xl mb-3">⏳</div>
+            <h1 class="disp text-2xl font-extrabold mb-2">¡Stand Creado con Éxito!</h1>
+            <p class="text-slate-600 mb-4">Transferiste a Personal Pay. Tu stand está pendiente de aprobación por el administrador (Walchu). En cuanto lo verifique, se activará en la feria.</p>
+            <button class="btn" onclick="navigate('#/')">Volver al Inicio</button>
+          </div>`;
+      } else {
+        const stand = stands.find(s => s.email === f.email && s.password === f.password);
+        if (!stand) return toast('Email o contraseña incorrectos.');
+        currentVendor = stand;
+        localStorage.setItem('fv_session', JSON.stringify(stand));
+        renderNav();
+        navigate('#/panel');
+      }
+    };
+
+    window.logout = () => {
+      currentVendor = null;
+      localStorage.removeItem('fv_session');
+      renderNav();
+      navigate('#/');
+      toast('Sesión cerrada');
+    };
+
+    // Helper to convert file to base64
+    const toBase64 = file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+
+    // --- PANEL DEL VENDEDOR ---
+    let vendorTab = 'products';
+    let editingProdId = null;
+
+    async function panelView() {
+      if (!currentVendor) return navigate('#/ingresar');
+      const stands = DB.getStands();
+      const stand = stands.find(s => s.id === currentVendor.id) || currentVendor;
+      const products = DB.getProducts().filter(p => p.stand_id === stand.id);
+
+      if (!stand.active) {
+        return `
+          <div class="card max-w-lg mx-auto text-center py-10">
+            <div class="text-5xl mb-3">⏳</div>
+            <h1 class="disp text-2xl font-bold mb-2">Stand Pendiente de Activación</h1>
+            <p class="text-slate-600 mb-4">Walchu está verificando tu comprobante de transferencia a Personal Pay. Pronto tu stand estará visible en la feria.</p>
+            <button class="btn" onclick="logout()">Cerrar Sesión</button>
+          </div>`;
+      }
+
+      let tabContent = '';
+      if (vendorTab === 'products') {
+        const editingP = products.find(p => p.id === editingProdId) || {};
+        tabContent = `
+          <div class="grid md:grid-cols-3 gap-6">
+            <form class="card space-y-3 md:col-span-1 h-fit" onsubmit="saveVendorProduct(event)">
+              <h3 class="disp text-xl font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
+              <input class="inp" name="name" placeholder="Nombre del producto" value="${h(editingP.name || '')}" required>
+              <select class="inp" name="category" required onchange="renderDynamicSpecs(this.value, ${JSON.stringify(editingP.specs || {})})">
+                <option value="">Categoría...</option>
+                <option value="Comida" ${editingP.category==='Comida'?'selected':''}>Comida</option>
+                <option value="Ropa" ${editingP.category==='Ropa'?'selected':''}>Ropa / Indumentaria</option>
+                <option value="Calzado" ${editingP.category==='Calzado'?'selected':''}>Calzado</option>
+                <option value="Manualidades" ${editingP.category==='Manualidades'?'selected':''}>Manualidades / Decoración</option>
+              </select>
+              <div id="dynamicSpecsContainer"></div>
+              <div class="grid grid-cols-2 gap-2">
+                <input class="inp" name="price" type="number" placeholder="Precio ($)" value="${editingP.price || ''}" required>
+                <input class="inp" name="discount" type="number" placeholder="% Desc. (opc)" value="${editingP.discount || ''}" min="0" max="95">
+              </div>
+              <textarea class="inp" name="description" rows="2" placeholder="Descripción...">${h(editingP.description || '')}</textarea>
+              <label class="block text-xs font-bold">Foto del producto:
+                <input type="file" id="prodImage" accept="image/*" class="inp mt-1 text-xs bg-white">
+              </label>
+              <button class="btn w-full">${editingP.id ? 'Guardar Cambios' : 'Publicar Producto'}</button>
+              ${editingP.id ? `<button type="button" class="btn2 w-full !bg-slate-300 !text-black text-sm" onclick="editingProdId=null; route();">Cancelar</button>` : ''}
+            </form>
+
+            <div class="md:col-span-2 space-y-4">
+              <div class="card flex flex-wrap items-center justify-between gap-3 bg-[#f3f9fa]">
+                <div>
+                  <h3 class="disp font-bold">Herramienta Masiva</h3>
+                  <p class="text-xs text-slate-600">Aumentar o bajar precios de todo tu catálogo por porcentaje.</p>
+                </div>
+                <div class="flex gap-2">
+                  <input id="massPct" type="number" placeholder="% (ej: 10 o -10)" class="inp !w-24 !py-1 text-sm">
+                  <button type="button" class="btn2 !py-1 text-sm" onclick="applyMassPrice()">Aplicar</button>
+                </div>
+              </div>
+
+              <h3 class="disp text-xl font-bold">Tus Productos (${products.length})</h3>
+              <div class="grid sm:grid-cols-2 gap-3">
+                ${products.length ? products.map(p => `
+                  <div class="card !p-3 flex gap-3 items-center">
+                    <div class="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                      ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '📦'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <b class="text-sm truncate block">${h(p.name)}</b>
+                      <span class="disp text-[#ff5a36] font-bold">${money(finalPrice(p))}</span>
+                      <div class="flex gap-3 text-xs mt-1">
+                        <button class="underline font-bold" onclick="editProduct(${p.id})">Editar</button>
+                        <button class="underline text-red-600" onclick="deleteProduct(${p.id})">Borrar</button>
+                      </div>
+                    </div>
+                  </div>`).join('') : '<p class="card">No cargaste productos aún.</p>'}
+              </div>
+            </div>
+          </div>`;
+      } else if (vendorTab === 'orders') {
+        const orders = DB.getOrders().filter(o => o.cart.some(i => i.standId === stand.id));
+        tabContent = `
+          <div class="card overflow-x-auto">
+            <h3 class="disp text-xl font-bold mb-3">🧾 Pedidos Recibidos</h3>
+            <table class="w-full text-sm">
+              <tr><th>N°</th><th>Comprador</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acción</th></tr>
+              ${orders.length ? orders.map(o => `
+                <tr>
+                  <td>#${o.id}</td>
+                  <td><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
+                  <td>${o.cart.filter(i=>i.standId===stand.id).map(i=>`${i.qty}x ${i.name}`).join(', ')}</td>
+                  <td><b>${money(o.cart.filter(i=>i.standId===stand.id).reduce((a,b)=>a+(b.price*b.qty),0))}</b></td>
+                  <td><span class="px-2 py-0.5 rounded-full text-xs font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
+                  <td><button class="btn2 !py-1 !px-2 text-xs" onclick="toggleOrderStatus('${o.id}')">${o.delivered?'Marcar Pendiente':'Marcar Entregado'}</button></td>
+                </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay pedidos recibidos.</td></tr>'}
+            </table>
+          </div>`;
+      } else if (vendorTab === 'settings') {
+        tabContent = `
+          <form class="card max-w-xl space-y-3" onsubmit="saveVendorSettings(event)">
+            <h3 class="disp text-xl font-bold">⚙️ Configuración del Stand</h3>
+            <input class="inp" name="name" value="${h(stand.name)}" required>
+            <input class="inp" name="phone" value="${h(stand.phone)}" required>
+            <textarea class="inp" name="description" rows="3">${h(stand.description || '')}</textarea>
+            <label class="block text-sm font-bold">Color del Stand: <input type="color" name="color" value="${stand.color || '#ff5a36'}" class="ml-2 align-middle"></label>
+            <div class="bg-slate-50 p-3 rounded-xl border flex items-center justify-between">
+              <div>
+                <b>Modo Vacaciones / Pausa</b>
+                <p class="text-xs text-slate-500">Oculta temporalmente tu stand de la feria.</p>
+              </div>
+              <input type="checkbox" name="active" ${stand.active ? 'checked' : ''} class="w-5 h-5 accent-[#ff5a36]">
+            </div>
+            <button class="btn w-full">Guardar Cambios</button>
+          </form>`;
+      }
+
+      return `
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+          <h1 class="disp text-3xl font-extrabold">⛺ Stand: ${h(stand.name)}</h1>
+          <div class="flex gap-2">
+            <button class="${vendorTab==='products'?'btn':'btn2'}" onclick="vendorTab='products'; route();">📦 Productos</button>
+            <button class="${vendorTab==='orders'?'btn':'btn2'}" onclick="vendorTab='orders'; route();">🧾 Pedidos</button>
+            <button class="${vendorTab==='settings'?'btn':'btn2'}" onclick="vendorTab='settings'; route();">⚙️ Mi Stand</button>
+          </div>
+        </div>
+        ${tabContent}`;
+    }
+
+    window.renderDynamicSpecs = (category, existingSpecs = {}) => {
+      const container = $('#dynamicSpecsContainer');
+      if (!container) return;
+      if (category === 'Ropa') {
+        const sizes = existingSpecs.sizes || ['S', 'M', 'L', 'XL'];
+        container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles disponibles (Ropa):</label><div class="flex gap-2">${['S','M','L','XL','XXL'].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(s)?'checked':''}> ${s}</label>`).join('')}</div>`;
+      } else if (category === 'Calzado') {
+        const sizes = existingSpecs.sizes || ['37', '38', '39', '40'];
+        container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles (Calzado 35-41):</label><div class="flex flex-wrap gap-2">${[35,36,37,38,39,40,41].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(String(s))?'checked':''}> ${s}</label>`).join('')}</div>`;
+      } else if (category === 'Manualidades') {
+        container.innerHTML = `<input class="inp text-sm" name="measures" placeholder="Medidas (ej: 1 a 20 cm)" value="${h(existingSpecs.measures || '')}">`;
+      } else {
+        container.innerHTML = '';
+      }
+    };
+
+    window.editProduct = id => {
+      editingProdId = id;
+      route();
+      setTimeout(() => {
+        const p = DB.getProducts().find(x => x.id === id);
+        if (p) renderDynamicSpecs(p.category, p.specs || {});
+      }, 50);
+    };
+
+    window.saveVendorProduct = async e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const fileInput = $('#prodImage');
+      let imgUrl = editingProdId ? (DB.getProducts().find(p => p.id === editingProdId)?.image || '') : '';
+      if (fileInput && fileInput.files[0]) {
+        imgUrl = await toBase64(fileInput.files[0]);
+      }
+
+      // Recoger talles si es ropa o calzado
+      const sizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(i => i.value);
+      const specs = { sizes, measures: f.measures || '' };
+
+      const products = DB.getProducts();
+      if (editingProdId) {
+        const idx = products.findIndex(p => p.id === editingProdId);
+        if (idx !== -1) {
+          products[idx] = { ...products[idx], name: f.name, category: f.category, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs };
+        }
+      } else {
+        products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: f.category, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
+      }
+      DB.saveProducts(products);
+      editingProdId = null;
+      toast('Producto guardado con éxito');
+      route();
+    };
+
+    window.deleteProduct = id => {
+      if (!confirm('¿Borrar este producto?')) return;
+      DB.saveProducts(DB.getProducts().filter(p => p.id !== id));
+      toast('Producto eliminado');
+      route();
+    };
+
+    window.applyMassPrice = () => {
+      const pct = Number($('#massPct').value);
+      if (!pct) return toast('Ingresá un porcentaje válido.');
+      const products = DB.getProducts();
+      products.forEach(p => {
+        if (p.stand_id === currentVendor.id) {
+          p.price = Math.round(p.price * (1 + pct / 100));
+        }
+      });
+      DB.saveProducts(products);
+      toast('¡Precios actualizados masivamente!');
+      route();
+    };
+
+    window.toggleOrderStatus = orderId => {
+      const orders = DB.getOrders();
+      const o = orders.find(x => x.id === orderId);
+      if (o) {
+        o.delivered = !o.delivered;
+        DB.saveOrders(orders);
+        toast('Estado de entrega actualizado');
+        route();
+      }
+    };
+
+    window.saveVendorSettings = e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const stands = DB.getStands();
+      const idx = stands.findIndex(s => s.id === currentVendor.id);
+      if (idx !== -1) {
+        stands[idx].name = f.name;
+        stands[idx].phone = f.phone;
+        stands[idx].description = f.description;
+        stands[idx].color = f.color;
+        stands[idx].active = f.active === 'on';
+        DB.saveStands(stands);
+        currentVendor = stands[idx];
+        localStorage.setItem('fv_session', JSON.stringify(currentVendor));
+        toast('Configuración guardada');
+        route();
+      }
+    };
+
+    // --- ENRUTADOR PRINCIPAL ---
+    async function route() {
+      const hash = location.hash || '#/';
+      const [path, arg] = hash.replace(/^#\/?/, '').split('/');
+      renderNav();
+      try {
+        let html = '';
+        if (!path || path === '') html = await homeView();
+        else if (path === 'stand') html = await standView(arg);
+        else if (path === 'carrito') { toggleCart(true); return; }
+        else if (path === 'checkout') html = checkoutView();
+        else if (path === 'ingresar' || path === 'registro') html = authView(path === 'registro');
+        else if (path === 'panel') html = await panelView();
+        else html = await homeView();
+        app.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        app.innerHTML = `<div class="card text-center py-10"><h2 class="text-xl font-bold">Ups, ocurrió un error.</h2><button class="btn mt-4" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      }
+      window.scrollTo(0, 0);
+    }
+
+    window.addEventListener('hashchange', route);
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!location.hash) location.replace('#/');
+      renderNav();
+      route();
+    });
   </script>
 </body>
 </html>
