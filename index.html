@@ -68,6 +68,28 @@
   <script>
     const ADMIN_WHATSAPP = '5493794655867';
     const PERSONAL_PAY_ALIAS = 'feria.virtual';
+    
+    // Configuración Cloudinary
+    const CLOUD_NAME = 'xr6zpe1k';
+    const UPLOAD_PRESET = 'feria_preset';
+
+    const uploadToCloudinary = async (file) => {
+      if (!file) return '';
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', UPLOAD_PRESET);
+      try {
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        return data.secure_url || '';
+      } catch (err) {
+        console.error('Error al subir imagen a Cloudinary:', err);
+        return '';
+      }
+    };
 
     const DB = {
       getStands: () => JSON.parse(localStorage.getItem('fv_stands') || '[]'),
@@ -405,7 +427,7 @@
             </label>` : ''}
           <input class="inp" name="email" type="email" placeholder="Correo electrónico" required>
           <input class="inp" name="password" type="password" placeholder="Contraseña" required minlength="6">
-          <button class="btn w-full text-lg">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
+          <button class="btn w-full text-lg" id="submitAuthBtn">${isReg ? 'Registrar mi Stand y Enviar Comprobante' : 'Ingresar a mi Panel'}</button>
           <button type="button" class="w-full text-center text-sm underline text-slate-600" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
         </form>`;
     }
@@ -428,18 +450,21 @@
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       const stands = DB.getStands();
+      const btn = $('#submitAuthBtn');
 
       if (isReg) {
-        const fileInput = $('#receiptFile');
+        if (btn) { btn.disabled = true; btn.textContent = 'Subiendo archivos a la nube...'; }
+        
+        const receiptInput = $('#receiptFile');
         let receiptUrl = '';
-        if (fileInput && fileInput.files[0]) {
-          receiptUrl = await toBase64(fileInput.files[0]);
+        if (receiptInput && receiptInput.files[0]) {
+          receiptUrl = await uploadToCloudinary(receiptInput.files[0]);
         }
 
         const logoInput = $('#logoFile');
         let logoUrl = '';
         if (logoInput && logoInput.files[0]) {
-          logoUrl = await toBase64(logoInput.files[0]);
+          logoUrl = await uploadToCloudinary(logoInput.files[0]);
         }
 
         const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
@@ -467,7 +492,7 @@
           <div class="card max-w-lg mx-auto text-center py-10">
             <div class="text-6xl mb-3">⏳</div>
             <h1 class="disp text-2xl font-extrabold mb-2">¡Stand Creado con Éxito!</h1>
-            <p class="text-slate-600 mb-4">Transferiste a Personal Pay. Tu stand está pendiente de aprobación por el administrador (Walchu). En cuanto lo verifique, se activará en la feria.</p>
+            <p class="text-slate-600 mb-4">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación por Walchu. En cuanto lo verifique, se activará en la feria.</p>
             <button class="btn" onclick="navigate('#/')">Volver al Inicio</button>
           </div>`;
       } else {
@@ -487,13 +512,6 @@
       navigate('#/');
       toast('Sesión cerrada');
     };
-
-    const toBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
 
     let vendorTab = 'products';
     let editingProdId = null;
@@ -519,7 +537,7 @@
         const editingP = products.find(p => p.id === editingProdId) || {};
         tabContent = `
           <div class="grid md:grid-cols-3 gap-6">
-            <form class="card space-y-3 md:col-span-1 h-fit" onsubmit="saveVendorProduct(event)">
+            <form class="card space-y-3 md:col-span-1 h-fit" onsubmit="saveVendorProduct(event)" id="prodForm">
               <h3 class="disp text-xl font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
               <input class="inp" name="name" placeholder="Nombre del producto" value="${h(editingP.name || '')}" required>
               <select class="inp" name="category" required onchange="renderDynamicSpecs(this.value, ${JSON.stringify(editingP.specs || {})})">
@@ -538,7 +556,7 @@
               <label class="block text-xs font-bold">Foto del producto:
                 <input type="file" id="prodImage" accept="image/*" class="inp mt-1 text-xs bg-white">
               </label>
-              <button class="btn w-full">${editingP.id ? 'Guardar Cambios' : 'Publicar Producto'}</button>
+              <button class="btn w-full" id="saveProdBtn">${editingP.id ? 'Guardar Cambios' : 'Publicar Producto'}</button>
               ${editingP.id ? `<button type="button" class="btn2 w-full !bg-slate-300 !text-black text-sm" onclick="editingProdId=null; route();">Cancelar</button>` : ''}
             </form>
 
@@ -613,7 +631,7 @@
               </div>
               <input type="checkbox" name="active" ${stand.active ? 'checked' : ''} class="w-5 h-5 accent-[#ff5a36]">
             </div>
-            <button class="btn w-full">Guardar Cambios</button>
+            <button class="btn w-full" id="saveSettingsBtn">Guardar Cambios</button>
           </form>`;
       }
 
@@ -660,10 +678,13 @@
     window.saveVendorProduct = async e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
+      const btn = $('#saveProdBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Subiendo foto...'; }
+
       const fileInput = $('#prodImage');
       let imgUrl = editingProdId ? (DB.getProducts().find(p => p.id === editingProdId)?.image || '') : '';
       if (fileInput && fileInput.files[0]) {
-        imgUrl = await toBase64(fileInput.files[0]);
+        imgUrl = await uploadToCloudinary(fileInput.files[0]);
       }
 
       const sizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(i => i.value);
@@ -719,13 +740,16 @@
     window.saveVendorSettings = async e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
+      const btn = $('#saveSettingsBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
       const stands = DB.getStands();
       const idx = stands.findIndex(s => s.id === currentVendor.id);
       if (idx !== -1) {
         const fileInput = $('#settingsLogo');
         let logoUrl = stands[idx].logo || '';
         if (fileInput && fileInput.files[0]) {
-          logoUrl = await toBase64(fileInput.files[0]);
+          logoUrl = await uploadToCloudinary(fileInput.files[0]);
         }
 
         stands[idx].name = f.name;
