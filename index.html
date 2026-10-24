@@ -20,7 +20,6 @@
     .card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 0 #c5d8dc; }
     .tile { aspect-ratio: 1; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .15s; cursor: pointer; text-decoration: none; }
     .tile:hover { transform: translateY(-4px) rotate(-1deg); }
-    /* Lupa / Zoom modal */
     .zoom-container { overflow: hidden; position: relative; cursor: zoom-in; }
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
@@ -39,7 +38,7 @@
 
   <main id="app" class="max-w-6xl mx-auto px-4 py-6 min-h-[75vh]"><p class="card">Cargando plataforma…</p></main>
 
-  <!-- Carrito Deslizante Lateral (Slide-over Drawer) -->
+  <!-- Carrito Deslizante Lateral -->
   <div id="cartDrawer" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity" onclick="toggleCart(false)">
     <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white p-6 shadow-2xl flex flex-col overflow-y-auto" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between pb-4 border-b border-[#e4f0f1]">
@@ -50,7 +49,7 @@
     </div>
   </div>
 
-  <!-- Modal Lupa / Zoom de Producto -->
+  <!-- Modal Zoom -->
   <div id="zoomModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-4" onclick="closeZoom()">
     <div class="bg-white rounded-3xl p-4 max-w-lg w-full relative overflow-hidden" onclick="event.stopPropagation()">
       <button type="button" class="absolute top-3 right-3 bg-slate-200 rounded-full w-8 h-8 font-bold flex items-center justify-center" onclick="closeZoom()">✕</button>
@@ -61,17 +60,15 @@
   <footer class="bg-[#10263a] text-white py-8 text-center text-sm mt-12">
     <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
-    <a href="https://wa.me/5493794042319?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 text-xs bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
+    <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 text-xs bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
   </footer>
 
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#10263a] text-white px-4 py-2 rounded-xl hidden z-50 max-w-[90vw] text-center shadow-lg"></div>
 
   <script>
-    const ADMIN_WHATSAPP = '5493794042319';
-    const PERSONAL_PAY_ALIAS = 'FERIA.VIRTUAL.WALCHU';
-    const PERSONAL_PAY_CBU = '0000003100012345678999';
+    const ADMIN_WHATSAPP = '5493794655867';
+    const PERSONAL_PAY_ALIAS = 'feria.virtual';
 
-    // --- BASE DE DATOS LOCALSTORAGE ---
     const DB = {
       getStands: () => JSON.parse(localStorage.getItem('fv_stands') || '[]'),
       saveStands: d => localStorage.setItem('fv_stands', JSON.stringify(d)),
@@ -83,11 +80,10 @@
       saveReviews: d => localStorage.setItem('fv_reviews', JSON.stringify(d)),
     };
 
-    // Sembrar datos iniciales de prueba si está vacío
     if (!DB.getStands().length) {
       DB.saveStands([
-        { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, created: Date.now() },
-        { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, created: Date.now() }
+        { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
+        { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
       ]);
       DB.saveProducts([
         { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
@@ -132,7 +128,6 @@
 
     window.navigate = hash => { location.hash = hash; };
 
-    // --- CARRITO DESLIZANTE ---
     window.toggleCart = show => {
       const drawer = $('#cartDrawer');
       if (show) {
@@ -188,7 +183,6 @@
       toggleCart(true);
     };
 
-    // --- LUPA / ZOOM MODAL ---
     window.openZoom = (imgUrl, name, desc) => {
       $('#zoomContent').innerHTML = `
         <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-64" onclick="this.classList.toggle('zoomed')">
@@ -201,7 +195,6 @@
     };
     window.closeZoom = () => $('#zoomModal').classList.add('hidden');
 
-    // --- VISTAS PRINCIPALES ---
     async function homeView() {
       const stands = DB.getStands().filter(s => s.active);
       return `
@@ -216,7 +209,7 @@
         <div id="standsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
           ${stands.length ? stands.map(s => `
             <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-              <span class="text-4xl">⛺</span>
+              ${s.logo ? `<div class="w-16 h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-4xl">⛺</span>'}
               <b class="disp text-lg leading-tight">${h(s.name)}</b>
               <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
             </a>`).join('') : '<p class="card col-span-full text-center py-8">No hay stands publicados todavía.</p>'}
@@ -237,7 +230,7 @@
       const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)));
       grid.innerHTML = stands.length ? stands.map(s => `
         <a class="tile" style="background:${h(s.color || '#ff5a36')}" href="#/stand/${s.id}">
-          <span class="text-4xl">⛺</span>
+          ${s.logo ? `<div class="w-16 h-16 rounded-full bg-white overflow-hidden shadow-md flex items-center justify-center mb-1"><img src="${h(s.logo)}" class="w-full h-full object-cover"></div>` : '<span class="text-4xl">⛺</span>'}
           <b class="disp text-lg leading-tight">${h(s.name)}</b>
           <span class="text-xs uppercase bg-black/20 px-2 py-0.5 rounded-full">${h(s.rubro)}</span>
         </a>`).join('') : '<p class="card col-span-full text-center py-8">No se encontraron stands con esa búsqueda.</p>';
@@ -251,16 +244,15 @@
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
 
       return `
-        <div class="rounded-3xl p-6 mb-6 text-white shadow-lg" style="background:${h(stand.color || '#ff5a36')}">
-          <button type="button" class="underline text-sm mb-3 font-bold" onclick="navigate('#/')">← Volver a la feria</button>
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 class="text-3xl font-extrabold flex items-center gap-2">⛺ ${h(stand.name)} <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full">${h(stand.rubro)}</span></h1>
-              <p class="opacity-90 mt-1 max-w-xl">${h(stand.description || '')}</p>
-              <p class="text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
-            </div>
-            ${stand.phone ? `<a class="btnwa" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a>` : ''}
+        <div class="rounded-3xl p-6 mb-6 text-white shadow-lg flex flex-wrap items-center gap-6" style="background:${h(stand.color || '#ff5a36')}">
+          ${stand.logo ? `<div class="w-24 h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+          <div class="flex-1 min-w-[200px]">
+            <button type="button" class="underline text-sm mb-2 font-bold block" onclick="navigate('#/')">← Volver a la feria</button>
+            <h1 class="text-3xl font-extrabold flex items-center gap-2 flex-wrap">${h(stand.name)} <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full">${h(stand.rubro)}</span></h1>
+            <p class="opacity-90 mt-1 max-w-xl">${h(stand.description || '')}</p>
+            <p class="text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
           </div>
+          ${stand.phone ? `<div><a class="btnwa" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a></div>` : ''}
         </div>
 
         <h2 class="text-2xl font-extrabold mb-4">Productos del Stand</h2>
@@ -315,7 +307,6 @@
       route();
     };
 
-    // --- CHECKOUT & WHATSAPP REDIRECT ---
     function checkoutView() {
       if (!cart.length) return navigate('#/');
       const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
@@ -342,7 +333,6 @@
       const orderId = Date.now().toString().slice(-6);
       const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
 
-      // Agrupar por stand
       const byStand = {};
       cart.forEach(i => {
         byStand[i.standId] = byStand[i.standId] || { name: i.standName, items: [] };
@@ -352,7 +342,6 @@
       orders.push({ id: orderId, buyer: f, cart: [...cart], total, status: 'Pendiente', delivered: false, date: Date.now() });
       DB.saveOrders(orders);
 
-      // Abrir WhatsApp para cada vendedor involucrado
       Object.keys(byStand).forEach(standId => {
         const stand = DB.getStands().find(s => s.id === Number(standId));
         if (stand && stand.phone) {
@@ -373,11 +362,10 @@
           <div class="text-6xl mb-3">🎉</div>
           <h1 class="disp text-3xl font-extrabold mb-2">¡Pedido #${orderId} Registrado!</h1>
           <p class="text-slate-600 mb-6">Se abrieron los chats de WhatsApp con cada vendedor para coordinar el pago y la entrega.</p>
-          <button type="button" class="btn" onclick="navigate('#/')">Volver a la Feria</button>
+          <button type="button" class="btn" onclick="navigate('#/')">Volver al Inicio</button>
         </div>`;
     };
 
-    // --- REGISTRO Y VENDEDOR (AUTH Y PANEL) ---
     function authView(isReg) {
       return `
         <form class="card max-w-xl mx-auto space-y-4 shadow-xl" onsubmit="handleAuth(event, ${isReg})">
@@ -387,20 +375,30 @@
               <b>Modelo de Negocio:</b> Cuota mensual de <b>$15.000 ARS</b> + 5% comisión semanal sobre ventas.
             </div>
             <input class="inp" name="name" placeholder="Nombre de tu Emprendimiento" required>
-            <select class="inp" name="rubro" required>
+            
+            <select class="inp" name="rubroSelect" id="rubroSelect" required onchange="handleRubroChange(this.value)">
               <option value="">Seleccioná tu Rubro...</option>
               <option value="Comida">Comida / Gastronomía</option>
               <option value="Ropa">Ropa / Indumentaria</option>
               <option value="Calzado">Calzado</option>
               <option value="Manualidades">Manualidades / Decoración</option>
               <option value="Accesorios">Accesorios y otros</option>
+              <option value="Otro">Otro (Escribir rubro...)</option>
             </select>
+            <div id="customRubroContainer" class="hidden">
+              <input class="inp" name="customRubro" id="customRubroInput" placeholder="Escribí cuál es tu rubro">
+            </div>
+
             <input class="inp" name="phone" type="tel" placeholder="Tu WhatsApp (con característica)" required>
             <textarea class="inp" name="description" rows="2" placeholder="Breve descripción de lo que vendés..."></textarea>
+            
+            <label class="block text-sm font-bold">Logo de tu emprendimiento (opcional):
+              <input type="file" id="logoFile" accept="image/*" class="inp mt-1 text-sm bg-white">
+            </label>
+
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <p class="font-bold mb-1">Datos para transferir los $15.000 de alta (Personal Pay):</p>
+              <p class="font-bold mb-1">Dato para transferir los $15.000 de alta (Personal Pay):</p>
               <p>Alias: <b>${PERSONAL_PAY_ALIAS}</b></p>
-              <p>CBU: <b>${PERSONAL_PAY_CBU}</b></p>
             </div>
             <label class="block text-sm font-bold">Subir comprobante de transferencia (foto o captura):
               <input type="file" id="receiptFile" accept="image/*" class="inp mt-1 text-sm bg-white" required>
@@ -411,6 +409,20 @@
           <button type="button" class="w-full text-center text-sm underline text-slate-600" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
         </form>`;
     }
+
+    window.handleRubroChange = val => {
+      const container = $('#customRubroContainer');
+      const input = $('#customRubroInput');
+      if (!container || !input) return;
+      if (val === 'Otro') {
+        container.classList.remove('hidden');
+        input.required = true;
+      } else {
+        container.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+      }
+    };
 
     window.handleAuth = async (e, isReg) => {
       e.preventDefault();
@@ -423,24 +435,33 @@
         if (fileInput && fileInput.files[0]) {
           receiptUrl = await toBase64(fileInput.files[0]);
         }
+
+        const logoInput = $('#logoFile');
+        let logoUrl = '';
+        if (logoInput && logoInput.files[0]) {
+          logoUrl = await toBase64(logoInput.files[0]);
+        }
+
+        const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
+
         const newStand = {
           id: Date.now(),
           name: f.name,
-          rubro: f.rubro,
+          rubro: finalRubro,
           phone: f.phone,
           description: f.description,
           email: f.email,
           password: f.password,
           color: '#ff5a36',
-          active: false, // Pendiente de aprobación del admin
+          active: false,
           receipt: receiptUrl,
+          logo: logoUrl,
           created: Date.now()
         };
         stands.push(newStand);
         DB.saveStands(stands);
 
-        // Alerta WhatsApp para Walchu
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $15.000. Por favor, aprobámelo.')}`, '_blank');
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $15.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
         
         app.innerHTML = `
           <div class="card max-w-lg mx-auto text-center py-10">
@@ -467,7 +488,6 @@
       toast('Sesión cerrada');
     };
 
-    // Helper to convert file to base64
     const toBase64 = file => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -475,7 +495,6 @@
       reader.onerror = error => reject(error);
     });
 
-    // --- PANEL DEL VENDEDOR ---
     let vendorTab = 'products';
     let editingProdId = null;
 
@@ -490,7 +509,7 @@
           <div class="card max-w-lg mx-auto text-center py-10">
             <div class="text-5xl mb-3">⏳</div>
             <h1 class="disp text-2xl font-bold mb-2">Stand Pendiente de Activación</h1>
-            <p class="text-slate-600 mb-4">Walchu está verificando tu comprobante de transferencia a Personal Pay. Pronto tu stand estará visible en la feria.</p>
+            <p class="text-slate-600 mb-4">Walchu está verificando tu comprobante de transferencia a feria.virtual. Pronto tu stand estará visible en la feria.</p>
             <button class="btn" onclick="logout()">Cerrar Sesión</button>
           </div>`;
       }
@@ -577,8 +596,15 @@
           <form class="card max-w-xl space-y-3" onsubmit="saveVendorSettings(event)">
             <h3 class="disp text-xl font-bold">⚙️ Configuración del Stand</h3>
             <input class="inp" name="name" value="${h(stand.name)}" required>
+            <input class="inp" name="rubro" value="${h(stand.rubro)}" required placeholder="Rubro">
             <input class="inp" name="phone" value="${h(stand.phone)}" required>
             <textarea class="inp" name="description" rows="3">${h(stand.description || '')}</textarea>
+            
+            <label class="block text-sm font-bold">Logo del Emprendimiento:
+              <input type="file" id="settingsLogo" accept="image/*" class="inp mt-1 text-sm bg-white">
+            </label>
+            ${stand.logo ? `<div class="w-16 h-16 rounded-full overflow-hidden bg-slate-100"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+
             <label class="block text-sm font-bold">Color del Stand: <input type="color" name="color" value="${stand.color || '#ff5a36'}" class="ml-2 align-middle"></label>
             <div class="bg-slate-50 p-3 rounded-xl border flex items-center justify-between">
               <div>
@@ -593,7 +619,10 @@
 
       return `
         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
-          <h1 class="disp text-3xl font-extrabold">⛺ Stand: ${h(stand.name)}</h1>
+          <div class="flex items-center gap-3">
+            ${stand.logo ? `<div class="w-14 h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+            <h1 class="disp text-3xl font-extrabold">⛺ ${h(stand.name)}</h1>
+          </div>
           <div class="flex gap-2">
             <button class="${vendorTab==='products'?'btn':'btn2'}" onclick="vendorTab='products'; route();">📦 Productos</button>
             <button class="${vendorTab==='orders'?'btn':'btn2'}" onclick="vendorTab='orders'; route();">🧾 Pedidos</button>
@@ -637,7 +666,6 @@
         imgUrl = await toBase64(fileInput.files[0]);
       }
 
-      // Recoger talles si es ropa o calzado
       const sizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(i => i.value);
       const specs = { sizes, measures: f.measures || '' };
 
@@ -688,16 +716,24 @@
       }
     };
 
-    window.saveVendorSettings = e => {
+    window.saveVendorSettings = async e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       const stands = DB.getStands();
       const idx = stands.findIndex(s => s.id === currentVendor.id);
       if (idx !== -1) {
+        const fileInput = $('#settingsLogo');
+        let logoUrl = stands[idx].logo || '';
+        if (fileInput && fileInput.files[0]) {
+          logoUrl = await toBase64(fileInput.files[0]);
+        }
+
         stands[idx].name = f.name;
+        stands[idx].rubro = f.rubro;
         stands[idx].phone = f.phone;
         stands[idx].description = f.description;
         stands[idx].color = f.color;
+        stands[idx].logo = logoUrl;
         stands[idx].active = f.active === 'on';
         DB.saveStands(stands);
         currentVendor = stands[idx];
@@ -707,7 +743,6 @@
       }
     };
 
-    // --- ENRUTADOR PRINCIPAL ---
     async function route() {
       const hash = location.hash || '#/';
       const [path, arg] = hash.replace(/^#\/?/, '').split('/');
