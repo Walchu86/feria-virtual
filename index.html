@@ -516,7 +516,7 @@
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
-          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver al Inicio</button>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
         </div>`;
     };
 
@@ -780,6 +780,56 @@
               </table>
             </div>
           </div>`;
+      } else if (adminTab === 'liquidation') {
+        const standSales = {};
+        stands.forEach(s => {
+          standSales[s.id] = { name: s.name, phone: s.phone, totalSales: 0, itemsCount: 0, details: [] };
+        });
+
+        orders.forEach(o => {
+          o.cart.forEach(item => {
+            if (standSales[item.standId]) {
+              const itemTotal = item.price * item.qty;
+              standSales[item.standId].totalSales += itemTotal;
+              standSales[item.standId].itemsCount += item.qty;
+              standSales[item.standId].details.push(`• ${item.qty}x ${item.name} (${money(itemTotal)}) [Pedido #${o.id}]`);
+            }
+          });
+        });
+
+        content = `
+          <div class="card text-left">
+            <h3 class="disp text-lg sm:text-xl font-bold mb-3">💰 Liquidación Semanal por Feriante (Comisión 5%)</h3>
+            <p class="text-xs text-slate-600 mb-4">Acá podés ver el total que vendió cada stand registrado en la feria y enviarle directamente por WhatsApp el detalle y la comisión que te debe depositar.</p>
+            
+            <div class="space-y-4">
+              ${stands.length ? stands.map(s => {
+                const data = standSales[s.id] || { totalSales: 0, itemsCount: 0, details: [] };
+                const commission = data.totalSales * 0.05;
+                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:\n\n` +
+                  `📦 Productos vendidos: ${data.itemsCount}\n` +
+                  (data.details.length ? `Detalle:\n` + data.details.join('\n') + `\n\n` : '') +
+                  `💵 Total Vendido: ${money(data.totalSales)}\n` +
+                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*\n\n` +
+                  `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
+
+                return `
+                  <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex-1">
+                      <b class="text-base disp text-[#10263a] block">🏪 ${h(s.name)}</b>
+                      <span class="text-xs text-slate-500">Teléfono: ${s.phone || 'Sin tel'}</span>
+                      <div class="mt-2 text-xs space-y-1">
+                        <p>Total Vendido: <b class="text-[#10263a]">${money(data.totalSales)}</b></p>
+                        <p>Comisión 5% a cobrar: <b class="text-[#ff5a36] text-sm">${money(commission)}</b></p>
+                      </div>
+                    </div>
+                    <div>
+                      ${s.phone ? `<a href="https://wa.me/${s.phone}?text=${encodeURIComponent(waText)}" target="_blank" class="btnwa text-xs !py-2 px-3 block text-center">💬 Enviar Liquidación por WhatsApp</a>` : '<span class="text-xs text-red-500">Sin teléfono</span>'}
+                    </div>
+                  </div>`;
+              }).join('') : '<p class="text-center py-4">No hay stands para liquidar.</p>'}
+            </div>
+          </div>`;
       }
 
       return `
@@ -794,9 +844,10 @@
           <div class="card !p-3"><p class="text-[11px] text-slate-500">Ventas Totales</p><p class="disp text-xl font-extrabold">${money(totalVentas)}</p></div>
           <div class="card !p-3 border-2 border-[#ff5a36] col-span-2 sm:col-span-1"><p class="text-[11px] text-slate-500">Tu Comisión (5%)</p><p class="disp text-xl font-extrabold text-[#ff5a36]">${money(totalComisiones)}</p></div>
         </div>
-        <div class="flex gap-2 mb-4">
-          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2" onclick="adminTab='stands'; route();">🏪 Stands</button>
-          <button class="${adminTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2" onclick="adminTab='orders'; route();">🧾 Pedidos y Comisiones</button>
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='stands'; route();">🏪 Stands</button>
+          <button class="${adminTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='orders'; route();">🧾 Pedidos</button>
+          <button class="${adminTab==='liquidation'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='liquidation'; route();">💰 Liquidación Semanal</button>
         </div>
         ${content}`;
     }
