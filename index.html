@@ -491,11 +491,18 @@
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
         const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
-          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
-          `\n\nTotal Stand: ${money(standTotal)}` +
-          (f.notes ? `\nNotas: ${f.notes}` : '') +
-          `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
+        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:
+` +
+          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('
+') +
+          `
+
+Total Stand: ${money(standTotal)}` +
+          (f.notes ? `
+Notas: ${f.notes}` : '') +
+          `
+Mi WhatsApp: ${f.phone}
+¿Cómo coordinamos pago y entrega?`;
         
         standsHtml += `
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
@@ -824,18 +831,29 @@
       let tabContent = '';
       if (vendorTab === 'products') {
         const editingP = products.find(p => p.id === editingProdId) || {};
+        const standardCats = ['Comida', 'Ropa', 'Calzado', 'Manualidades'];
+        const isCustomCat = editingP.category && !standardCats.includes(editingP.category);
+        const selectedCatVal = isCustomCat ? 'Otro' : (editingP.category || '');
+
         tabContent = `
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <form class="card space-y-3 md:col-span-1 h-fit text-left" onsubmit="saveVendorProduct(event)" id="prodForm">
               <h3 class="disp text-lg sm:text-xl font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
               <input class="inp text-sm" name="name" placeholder="Nombre del producto" value="${h(editingP.name || '')}" required>
-              <select class="inp text-sm" name="category" required onchange="renderDynamicSpecs(this.value, ${JSON.stringify(editingP.specs || {})})">
+              
+              <select class="inp text-sm" name="categorySelect" id="prodCategorySelect" required onchange="handleProdCategoryChange(this.value)">
                 <option value="">Categoría...</option>
-                <option value="Comida" ${editingP.category==='Comida'?'selected':''}>Comida</option>
-                <option value="Ropa" ${editingP.category==='Ropa'?'selected':''}>Ropa / Indumentaria</option>
-                <option value="Calzado" ${editingP.category==='Calzado'?'selected':''}>Calzado</option>
-                <option value="Manualidades" ${editingP.category==='Manualidades'?'selected':''}>Manualidades / Decoración</option>
+                <option value="Comida" ${selectedCatVal==='Comida'?'selected':''}>Comida</option>
+                <option value="Ropa" ${selectedCatVal==='Ropa'?'selected':''}>Ropa / Indumentaria</option>
+                <option value="Calzado" ${selectedCatVal==='Calzado'?'selected':''}>Calzado</option>
+                <option value="Manualidades" ${selectedCatVal==='Manualidades'?'selected':''}>Manualidades / Decoración</option>
+                <option value="Otro" ${selectedCatVal==='Otro'?'selected':''}>Otro (Escribir categoría...)</option>
               </select>
+
+              <div id="customProdCatContainer" class="${isCustomCat ? '' : 'hidden'}">
+                <input class="inp text-sm" name="customCategory" id="customProdCatInput" placeholder="Escribí tu categoría..." value="${h(isCustomCat ? editingP.category : '')}">
+              </div>
+
               <div id="dynamicSpecsContainer"></div>
               <div class="grid grid-cols-2 gap-2">
                 <input class="inp text-sm" name="price" type="number" placeholder="Precio ($)" value="${editingP.price || ''}" required>
@@ -870,10 +888,11 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <b class="text-sm truncate block">${h(p.name)}</b>
+                      <span class="text-[11px] text-slate-500 uppercase block">${h(p.category)}</span>
                       <span class="disp text-[#ff5a36] font-bold text-sm">${money(finalPrice(p))}</span>
                       <div class="flex gap-3 text-xs mt-1">
-                        <button class="underline font-bold" onclick="editProduct(${p.id})">Editar</button>
-                        <button class="underline text-red-600" onclick="deleteProduct(${p.id})">Borrar</button>
+                        <button class="underline font-bold text-blue-600" onclick="editProduct(${p.id})">Editar ✏️</button>
+                        <button class="underline text-red-600" onclick="deleteProduct(${p.id})">Borrar 🗑️</button>
                       </div>
                     </div>
                   </div>`).join('') : '<p class="card">No cargaste productos aún.</p>'}
@@ -941,6 +960,21 @@
         ${tabContent}`;
     }
 
+    window.handleProdCategoryChange = val => {
+      const container = $('#customProdCatContainer');
+      const input = $('#customProdCatInput');
+      if (!container || !input) return;
+      if (val === 'Otro') {
+        container.classList.remove('hidden');
+        input.required = true;
+      } else {
+        container.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+      }
+      renderDynamicSpecs(val, {});
+    };
+
     window.renderDynamicSpecs = (category, existingSpecs = {}) => {
       const container = $('#dynamicSpecsContainer');
       if (!container) return;
@@ -959,10 +993,24 @@
 
     window.editProduct = id => {
       editingProdId = id;
+      vendorTab = 'products';
       route();
       setTimeout(() => {
         const p = DB.getProducts().find(x => x.id === id);
-        if (p) renderDynamicSpecs(p.category, p.specs || {});
+        if (p) {
+          const standardCats = ['Comida', 'Ropa', 'Calzado', 'Manualidades'];
+          const catVal = standardCats.includes(p.category) ? p.category : 'Otro';
+          const select = $('#prodCategorySelect');
+          if (select) {
+            select.value = catVal;
+            handleProdCategoryChange(catVal);
+          }
+          if (catVal === 'Otro') {
+            const customInput = $('#customProdCatInput');
+            if (customInput) customInput.value = p.category;
+          }
+          renderDynamicSpecs(p.category, p.specs || {});
+        }
       }, 50);
     };
 
@@ -978,6 +1026,7 @@
         imgUrl = await uploadToCloudinary(fileInput.files[0]);
       }
 
+      const finalCategory = f.categorySelect === 'Otro' ? (f.customCategory || 'General') : f.categorySelect;
       const sizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(i => i.value);
       const specs = { sizes, measures: f.measures || '' };
 
@@ -985,10 +1034,10 @@
       if (editingProdId) {
         const idx = products.findIndex(p => p.id === editingProdId);
         if (idx !== -1) {
-          products[idx] = { ...products[idx], name: f.name, category: f.category, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs };
+          products[idx] = { ...products[idx], name: f.name, category: finalCategory, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs };
         }
       } else {
-        products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: f.category, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
+        products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: finalCategory, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
       }
       await DB.saveProducts(products);
       editingProdId = null;
