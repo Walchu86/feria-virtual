@@ -27,10 +27,10 @@
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   </style>
 
-  <!-- FIREBASE FIRESTORE INTEGRATION -->
+  <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQgmq6xVihzWN-f0LbzlzZrSecYeEnjs",
@@ -49,7 +49,7 @@
     let memoryOrders = [];
     let memoryReviews = [];
 
-    async function initCloudDB() {
+    async function fetchCloudData() {
       try {
         const standsSnap = await getDocs(collection(db, 'stands'));
         memoryStands = standsSnap.docs.map(d => d.data());
@@ -63,7 +63,6 @@
         const reviewsSnap = await getDocs(collection(db, 'reviews'));
         memoryReviews = reviewsSnap.docs.map(d => d.data());
 
-        // Datos iniciales si la nube está vacía
         if (!memoryStands.length) {
           memoryStands = [
             { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
@@ -77,28 +76,43 @@
           for (let p of memoryProducts) await setDoc(doc(db, 'products', String(p.id)), p);
         }
       } catch (err) {
-        console.error("Error conectando con Firestore:", err);
+        console.error("Error al sincronizar con Firestore:", err);
       }
       if (typeof window.route === 'function') window.route();
     }
 
-    initCloudDB();
+    fetchCloudData();
 
+    // CloudDB asíncrono robusto
     window.CloudDB = {
       getStands: () => memoryStands,
       saveStands: async (arr) => {
         memoryStands = arr;
-        for (let s of arr) await setDoc(doc(db, 'stands', String(s.id)), s);
+        for (let s of arr) {
+          await setDoc(doc(db, 'stands', String(s.id)), s);
+        }
+      },
+      removeStand: async (id) => {
+        memoryStands = memoryStands.filter(s => s.id !== id);
+        try { await deleteDoc(doc(db, 'stands', String(id))); } catch(e){}
       },
       getProducts: () => memoryProducts,
       saveProducts: async (arr) => {
         memoryProducts = arr;
-        for (let p of arr) await setDoc(doc(db, 'products', String(p.id)), p);
+        for (let p of arr) {
+          await setDoc(doc(db, 'products', String(p.id)), p);
+        }
+      },
+      removeProduct: async (id) => {
+        memoryProducts = memoryProducts.filter(p => p.id !== id);
+        try { await deleteDoc(doc(db, 'products', String(id))); } catch(e){}
       },
       getOrders: () => memoryOrders,
       saveOrders: async (arr) => {
         memoryOrders = arr;
-        for (let o of arr) await setDoc(doc(db, 'orders', String(o.id)), o);
+        for (let o of arr) {
+          await setDoc(doc(db, 'orders', String(o.id)), o);
+        }
       },
       getReviews: () => memoryReviews,
       saveReviews: async (arr) => {
@@ -108,7 +122,8 @@
           if (!r.id) r.id = Date.now() + i;
           await setDoc(doc(db, 'reviews', String(r.id)), r);
         }
-      }
+      },
+      refresh: fetchCloudData
     };
   </script>
 </head>
@@ -183,16 +198,18 @@
       }
     };
 
-    // DB puente conectada a Firestore (CloudDB) con respaldo en localStorage para velocidad
     const DB = {
       getStands: () => window.CloudDB ? window.CloudDB.getStands() : [],
-      saveStands: d => { if(window.CloudDB) window.CloudDB.saveStands(d); },
+      saveStands: async d => { if(window.CloudDB) await window.CloudDB.saveStands(d); },
+      removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
-      saveProducts: d => { if(window.CloudDB) window.CloudDB.saveProducts(d); },
+      saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
+      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
-      saveOrders: d => { if(window.CloudDB) window.CloudDB.saveOrders(d); },
+      saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: d => { if(window.CloudDB) window.CloudDB.saveReviews(d); },
+      saveReviews: async d => { if(window.CloudDB) await window.CloudDB.saveReviews(d); },
+      refresh: () => { if(window.CloudDB) window.CloudDB.refresh(); }
     };
 
     const $ = s => document.querySelector(s);
@@ -418,12 +435,12 @@
         </div>`;
     }
 
-    window.submitReview = (e, standId) => {
+    window.submitReview = async (e, standId) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       const reviews = DB.getReviews();
       reviews.push({ stand_id: standId, author: f.author, rating: Number(f.rating), comment: f.comment, date: Date.now() });
-      DB.saveReviews(reviews);
+      await DB.saveReviews(reviews);
       toast('¡Gracias por calificar al stand!');
       route();
     };
@@ -447,7 +464,7 @@
         </div>`;
     }
 
-    window.placeOrder = e => {
+    window.placeOrder = async e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       const orders = DB.getOrders();
@@ -466,7 +483,7 @@
       });
 
       orders.push({ id: orderId, buyer: f, cart: [...cart], total, status: 'Pendiente', delivered: false, date: Date.now() });
-      DB.saveOrders(orders);
+      await DB.saveOrders(orders);
 
       cart = [];
       saveCart();
@@ -596,13 +613,13 @@
           email: f.email,
           password: f.password,
           color: '#ff5a36',
-          active: false,
+          active: false, // Inactivo hasta que Walchu lo apruebe en admin
           receipt: receiptUrl,
           logo: logoUrl,
           created: Date.now()
         };
         stands.push(newStand);
-        DB.saveStands(stands);
+        await DB.saveStands(stands);
 
         window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $10.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
         
@@ -652,6 +669,7 @@
       if (f.user === 'walchu86' && f.pass === 'pancha2026') {
         adminLogged = true;
         localStorage.setItem('fv_admin_logged', 'true');
+        DB.refresh(); // Refrescar datos de la nube al entrar al admin
         toast('¡Bienvenido Walchu!');
         route();
       } else {
@@ -666,20 +684,20 @@
       toast('Sesión de admin cerrada');
     };
 
-    window.toggleStandActive = id => {
+    window.toggleStandActive = async id => {
       const stands = DB.getStands();
       const s = stands.find(x => x.id === id);
       if (s) {
         s.active = !s.active;
-        DB.saveStands(stands);
+        await DB.saveStands(stands);
         toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
         route();
       }
     };
 
-    window.deleteStand = id => {
+    window.deleteStand = async id => {
       if (!confirm('¿Eliminar este stand por completo?')) return;
-      DB.saveStands(DB.getStands().filter(s => s.id !== id));
+      await DB.removeStand(id);
       toast('Stand eliminado');
       route();
     };
@@ -712,7 +730,10 @@
       if (adminTab === 'stands') {
         content = `
           <div class="card overflow-x-auto text-left">
-            <h3 class="disp text-lg sm:text-xl font-bold mb-3">🏪 Gestión de Stands (${stands.length})</h3>
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="disp text-lg sm:text-xl font-bold">🏪 Gestión de Stands (${stands.length})</h3>
+              <button class="btn2 text-xs py-1 px-2" onclick="DB.refresh(); route();">🔄 Actualizar Nube</button>
+            </div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs sm:text-sm min-w-[600px]">
                 <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto</th><th class="p-2">Comprobante</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
@@ -963,20 +984,20 @@
       } else {
         products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: f.category, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
       }
-      DB.saveProducts(products);
+      await DB.saveProducts(products);
       editingProdId = null;
       toast('Producto guardado con éxito');
       route();
     };
 
-    window.deleteProduct = id => {
+    window.deleteProduct = async id => {
       if (!confirm('¿Borrar este producto?')) return;
-      DB.saveProducts(DB.getProducts().filter(p => p.id !== id));
+      await DB.removeProduct(id);
       toast('Producto eliminado');
       route();
     };
 
-    window.applyMassPrice = () => {
+    window.applyMassPrice = async () => {
       const pct = Number($('#massPct').value);
       if (!pct) return toast('Ingresá un porcentaje válido.');
       const products = DB.getProducts();
@@ -985,17 +1006,17 @@
           p.price = Math.round(p.price * (1 + pct / 100));
         }
       });
-      DB.saveProducts(products);
+      await DB.saveProducts(products);
       toast('¡Precios actualizados masivamente!');
       route();
     };
 
-    window.toggleOrderStatus = orderId => {
+    window.toggleOrderStatus = async orderId => {
       const orders = DB.getOrders();
       const o = orders.find(x => x.id === orderId);
       if (o) {
         o.delivered = !o.delivered;
-        DB.saveOrders(orders);
+        await DB.saveOrders(orders);
         toast('Estado de entrega actualizado');
         route();
       }
@@ -1023,7 +1044,7 @@
         stands[idx].color = f.color;
         stands[idx].logo = logoUrl;
         stands[idx].active = f.active === 'on';
-        DB.saveStands(stands);
+        await DB.saveStands(stands);
         currentVendor = stands[idx];
         localStorage.setItem('fv_session', JSON.stringify(currentVendor));
         toast('Configuración guardada');
@@ -1056,7 +1077,7 @@
 
     window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#/s'); // fallback
+      if (!location.hash) location.replace('#/');
       renderNav();
       window.route();
     });
