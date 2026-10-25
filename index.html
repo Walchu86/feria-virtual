@@ -83,7 +83,6 @@
 
     fetchCloudData();
 
-    // CloudDB asíncrono robusto
     window.CloudDB = {
       getStands: () => memoryStands,
       saveStands: async (arr) => {
@@ -584,53 +583,60 @@
     window.handleAuth = async (e, isReg) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
-      const stands = DB.getStands();
       const btn = $('#submitAuthBtn');
 
       if (isReg) {
         if (btn) { btn.disabled = true; btn.textContent = 'Subiendo archivos a la nube...'; }
         
-        const receiptInput = $('#receiptFile');
-        let receiptUrl = '';
-        if (receiptInput && receiptInput.files[0]) {
-          receiptUrl = await uploadToCloudinary(receiptInput.files[0]);
+        try {
+          const receiptInput = $('#receiptFile');
+          let receiptUrl = '';
+          if (receiptInput && receiptInput.files[0]) {
+            receiptUrl = await uploadToCloudinary(receiptInput.files[0]);
+          }
+
+          const logoInput = $('#logoFile');
+          let logoUrl = '';
+          if (logoInput && logoInput.files[0]) {
+            logoUrl = await uploadToCloudinary(logoInput.files[0]);
+          }
+
+          const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
+
+          const stands = DB.getStands();
+          const newStand = {
+            id: Date.now(),
+            name: f.name,
+            rubro: finalRubro,
+            phone: f.phone,
+            description: f.description,
+            email: f.email,
+            password: f.password,
+            color: '#ff5a36',
+            active: false,
+            receipt: receiptUrl,
+            logo: logoUrl,
+            created: Date.now()
+          };
+          stands.push(newStand);
+          await DB.saveStands(stands);
+
+          window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $10.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
+          
+          app.innerHTML = `
+            <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
+              <div class="text-6xl">⏳</div>
+              <h1 class="disp text-2xl font-extrabold">¡Stand Creado con Éxito!</h1>
+              <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación. Podés aprobarlo ingresando al panel de administración.</p>
+              <button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al Inicio</button>
+            </div>`;
+        } catch (err) {
+          console.error("Error al registrar stand:", err);
+          alert("Hubo un error al registrar el stand en la nube. Revisa tu conexión o los permisos de Firestore.");
+          if (btn) { btn.disabled = false; btn.textContent = 'Registrar mi Stand y Enviar Comprobante'; }
         }
-
-        const logoInput = $('#logoFile');
-        let logoUrl = '';
-        if (logoInput && logoInput.files[0]) {
-          logoUrl = await uploadToCloudinary(logoInput.files[0]);
-        }
-
-        const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
-
-        const newStand = {
-          id: Date.now(),
-          name: f.name,
-          rubro: finalRubro,
-          phone: f.phone,
-          description: f.description,
-          email: f.email,
-          password: f.password,
-          color: '#ff5a36',
-          active: false, // Inactivo hasta que Walchu lo apruebe en admin
-          receipt: receiptUrl,
-          logo: logoUrl,
-          created: Date.now()
-        };
-        stands.push(newStand);
-        await DB.saveStands(stands);
-
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand "' + f.name + '" en la Feria Virtual y acabo de transferir los $10.000 a feria.virtual. Por favor, aprobámelo.')}`, '_blank');
-        
-        app.innerHTML = `
-          <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
-            <div class="text-6xl">⏳</div>
-            <h1 class="disp text-2xl font-extrabold">¡Stand Creado con Éxito!</h1>
-            <p class="text-sm text-slate-600">Tus imágenes se subieron a la nube y el comprobante fue enviado. Tu stand está pendiente de aprobación. Podés aprobarlo ingresando al panel de administración.</p>
-            <button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al Inicio</button>
-          </div>`;
       } else {
+        const stands = DB.getStands();
         const stand = stands.find(s => s.email === f.email && s.password === f.password);
         if (!stand) return toast('Email o contraseña incorrectos.');
         currentVendor = stand;
@@ -669,7 +675,7 @@
       if (f.user === 'walchu86' && f.pass === 'pancha2026') {
         adminLogged = true;
         localStorage.setItem('fv_admin_logged', 'true');
-        DB.refresh(); // Refrescar datos de la nube al entrar al admin
+        DB.refresh();
         toast('¡Bienvenido Walchu!');
         route();
       } else {
