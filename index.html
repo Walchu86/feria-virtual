@@ -199,16 +199,44 @@
 
     const DB = {
       getStands: () => window.CloudDB ? window.CloudDB.getStands() : [],
-      saveStands: async d => { if(window.CloudDB) await window.CloudDB.saveStands(d); },
-      removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
+      saveStands: async (arr) => {
+        memoryStands = arr;
+        for (let s of arr) {
+          await setDoc(doc(db, 'stands', String(s.id)), s);
+        }
+      },
+      removeStand: async (id) => {
+        memoryStands = memoryStands.filter(s => s.id !== id);
+        try { await deleteDoc(doc(db, 'stands', String(id))); } catch(e){}
+      },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
-      saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
-      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
+      saveProducts: async (arr) => {
+        memoryProducts = arr;
+        for (let p of arr) {
+          await setDoc(doc(db, 'products', String(p.id)), p);
+        }
+      },
+      removeProduct: async (id) => {
+        memoryProducts = memoryProducts.filter(p => p.id !== id);
+        try { await deleteDoc(doc(db, 'products', String(id))); } catch(e){}
+      },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
-      saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
+      saveOrders: async (arr) => {
+        memoryOrders = arr;
+        for (let o of arr) {
+          await setDoc(doc(db, 'orders', String(o.id)), o);
+        }
+      },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: async d => { if(window.CloudDB) await window.CloudDB.saveReviews(d); },
-      refresh: () => { if(window.CloudDB) window.CloudDB.refresh(); }
+      saveReviews: async (arr) => {
+        memoryReviews = arr;
+        for (let i = 0; i < arr.length; i++) {
+          let r = arr[i];
+          if (!r.id) r.id = Date.now() + i;
+          await setDoc(doc(db, 'reviews', String(r.id)), r);
+        }
+      },
+      refresh: fetchCloudData
     };
 
     const $ = s => document.querySelector(s);
@@ -524,7 +552,7 @@
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
-          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver al Feria</button>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
         </div>`;
     };
 
@@ -688,6 +716,17 @@
       if (s) {
         s.active = !s.active;
         await DB.saveStands(stands);
+        
+        if (s.active && s.phone) {
+          const welcomeMsg = `¡Hola ${s.name}! 👋\n` +
+            `Te recordamos cómo funciona la gestión de tu puesto en feriavirtual.shop:\n` +
+            `- 🏪 Tu puesto activo 24/7: Tus productos siguen publicados y visibles todo el tiempo.\n` +
+            `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.\n` +
+            `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.\n` +
+            `¡Gracias por sumarte y hacer crecer tu emprendimiento con nosotros! 🚀🧉`;
+          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
+        }
+
         toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
         route();
       }
@@ -734,19 +773,18 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs sm:text-sm min-w-[600px]">
-                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto</th><th class="p-2">Comprobante</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
+                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
                 ${stands.length ? stands.map(s => `
                   <tr>
                     <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-500">${h(s.email)}</span></td>
                     <td class="p-2">${h(s.rubro)}</td>
                     <td class="p-2"><a class="underline" href="https://wa.me/${s.phone}" target="_blank">${s.phone}</a></td>
-                    <td class="p-2">${s.receipt ? `<a href="${h(s.receipt)}" target="_blank" class="text-blue-600 font-bold underline">Ver Comprobante</a>` : '—'}</td>
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
                     <td class="p-2 space-x-1">
                       <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
                       <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
                     </td>
-                  </tr>`).join('') : '<tr><td colspan="6" class="text-center py-4">No hay stands registrados.</td></tr>'}
+                  </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">No hay stands registrados.</td></tr>'}
               </table>
             </div>
           </div>`;
