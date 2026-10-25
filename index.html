@@ -26,6 +26,91 @@
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   </style>
+
+  <!-- FIREBASE FIRESTORE INTEGRATION -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQgmq6xVihzWN-f0LbzlzZrSecYeEnjs",
+      authDomain: "feria-virtual-shop.firebaseapp.com",
+      projectId: "feria-virtual-shop",
+      storageBucket: "feria-virtual-shop.firebasestorage.app",
+      messagingSenderId: "566189255248",
+      appId: "1:566189255248:web:5a44efcol1e4cb8ad3c355"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let memoryStands = [];
+    let memoryProducts = [];
+    let memoryOrders = [];
+    let memoryReviews = [];
+
+    async function initCloudDB() {
+      try {
+        const standsSnap = await getDocs(collection(db, 'stands'));
+        memoryStands = standsSnap.docs.map(d => d.data());
+
+        const prodsSnap = await getDocs(collection(db, 'products'));
+        memoryProducts = prodsSnap.docs.map(d => d.data());
+
+        const ordersSnap = await getDocs(collection(db, 'orders'));
+        memoryOrders = ordersSnap.docs.map(d => d.data());
+
+        const reviewsSnap = await getDocs(collection(db, 'reviews'));
+        memoryReviews = reviewsSnap.docs.map(d => d.data());
+
+        // Datos iniciales si la nube está vacía
+        if (!memoryStands.length) {
+          memoryStands = [
+            { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
+            { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
+          ];
+          memoryProducts = [
+            { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
+            { id: 102, stand_id: 2, name: 'Remera Oversize Algodón', category: 'Ropa', price: 12000, discount: 10, image: '', description: 'Excelente calidad.', active: true, specs: { sizes: ['S', 'M', 'L', 'XL'] } }
+          ];
+          for (let s of memoryStands) await setDoc(doc(db, 'stands', String(s.id)), s);
+          for (let p of memoryProducts) await setDoc(doc(db, 'products', String(p.id)), p);
+        }
+      } catch (err) {
+        console.error("Error conectando con Firestore:", err);
+      }
+      if (typeof window.route === 'function') window.route();
+    }
+
+    initCloudDB();
+
+    window.CloudDB = {
+      getStands: () => memoryStands,
+      saveStands: async (arr) => {
+        memoryStands = arr;
+        for (let s of arr) await setDoc(doc(db, 'stands', String(s.id)), s);
+      },
+      getProducts: () => memoryProducts,
+      saveProducts: async (arr) => {
+        memoryProducts = arr;
+        for (let p of arr) await setDoc(doc(db, 'products', String(p.id)), p);
+      },
+      getOrders: () => memoryOrders,
+      saveOrders: async (arr) => {
+        memoryOrders = arr;
+        for (let o of arr) await setDoc(doc(db, 'orders', String(o.id)), o);
+      },
+      getReviews: () => memoryReviews,
+      saveReviews: async (arr) => {
+        memoryReviews = arr;
+        for (let i = 0; i < arr.length; i++) {
+          let r = arr[i];
+          if (!r.id) r.id = Date.now() + i;
+          await setDoc(doc(db, 'reviews', String(r.id)), r);
+        }
+      }
+    };
+  </script>
 </head>
 <body class="min-h-screen flex flex-col">
   <header class="bg-[#10263a] text-white sticky top-0 z-30 shadow-md">
@@ -38,7 +123,7 @@
     </div>
   </header>
 
-  <main id="app" class="max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1"></main>
+  <main id="app" class="max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1"><p class="card text-center py-8">☁️ Sincronizando con la nube...</p></main>
 
   <!-- Carrito Deslizante Lateral -->
   <div id="cartDrawer" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity" onclick="toggleCart(false)">
@@ -98,27 +183,17 @@
       }
     };
 
+    // DB puente conectada a Firestore (CloudDB) con respaldo en localStorage para velocidad
     const DB = {
-      getStands: () => JSON.parse(localStorage.getItem('fv_stands') || '[]'),
-      saveStands: d => localStorage.setItem('fv_stands', JSON.stringify(d)),
-      getProducts: () => JSON.parse(localStorage.getItem('fv_products') || '[]'),
-      saveProducts: d => localStorage.setItem('fv_products', JSON.stringify(d)),
-      getOrders: () => JSON.parse(localStorage.getItem('fv_orders') || '[]'),
-      saveOrders: d => localStorage.setItem('fv_orders', JSON.stringify(d)),
-      getReviews: () => JSON.parse(localStorage.getItem('fv_reviews') || '[]'),
-      saveReviews: d => localStorage.setItem('fv_reviews', JSON.stringify(d)),
+      getStands: () => window.CloudDB ? window.CloudDB.getStands() : [],
+      saveStands: d => { if(window.CloudDB) window.CloudDB.saveStands(d); },
+      getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
+      saveProducts: d => { if(window.CloudDB) window.CloudDB.saveProducts(d); },
+      getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
+      saveOrders: d => { if(window.CloudDB) window.CloudDB.saveOrders(d); },
+      getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
+      saveReviews: d => { if(window.CloudDB) window.CloudDB.saveReviews(d); },
     };
-
-    if (!DB.getStands().length) {
-      DB.saveStands([
-        { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
-        { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
-      ]);
-      DB.saveProducts([
-        { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
-        { id: 102, stand_id: 2, name: 'Remera Oversize Algodón', category: 'Ropa', price: 12000, discount: 10, image: '', description: 'Excelente calidad.', active: true, specs: { sizes: ['S', 'M', 'L', 'XL'] } }
-      ]);
-    }
 
     const $ = s => document.querySelector(s);
     const app = $('#app');
@@ -699,7 +774,7 @@
         ${content}`;
     }
 
-    // --- PANEL DEL VENDEROR ---
+    // --- PANEL DEL VENDEDOR ---
     let vendorTab = 'products';
     let editingProdId = null;
 
@@ -957,7 +1032,7 @@
     };
 
     // --- ENRUTADOR PRINCIPAL ---
-    async function route() {
+    window.route = async function() {
       const hash = location.hash || '#/';
       const [path, arg] = hash.replace(/^#\/?/, '').split('/');
       renderNav();
@@ -977,13 +1052,13 @@
         app.innerHTML = `<div class="card text-center py-10"><h2 class="text-xl font-bold">Ups, ocurrió un error.</h2><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       }
       window.scrollTo(0, 0);
-    }
+    };
 
-    window.addEventListener('hashchange', route);
+    window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#/');
+      if (!location.hash) location.replace('#/s'); // fallback
       renderNav();
-      route();
+      window.route();
     });
   </script>
 </body>
