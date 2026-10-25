@@ -199,44 +199,16 @@
 
     const DB = {
       getStands: () => window.CloudDB ? window.CloudDB.getStands() : [],
-      saveStands: async (arr) => {
-        memoryStands = arr;
-        for (let s of arr) {
-          await setDoc(doc(db, 'stands', String(s.id)), s);
-        }
-      },
-      removeStand: async (id) => {
-        memoryStands = memoryStands.filter(s => s.id !== id);
-        try { await deleteDoc(doc(db, 'stands', String(id))); } catch(e){}
-      },
+      saveStands: async d => { if(window.CloudDB) await window.CloudDB.saveStands(d); },
+      removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
-      saveProducts: async (arr) => {
-        memoryProducts = arr;
-        for (let p of arr) {
-          await setDoc(doc(db, 'products', String(p.id)), p);
-        }
-      },
-      removeProduct: async (id) => {
-        memoryProducts = memoryProducts.filter(p => p.id !== id);
-        try { await deleteDoc(doc(db, 'products', String(id))); } catch(e){}
-      },
+      saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
+      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
-      saveOrders: async (arr) => {
-        memoryOrders = arr;
-        for (let o of arr) {
-          await setDoc(doc(db, 'orders', String(o.id)), o);
-        }
-      },
+      saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: async (arr) => {
-        memoryReviews = arr;
-        for (let i = 0; i < arr.length; i++) {
-          let r = arr[i];
-          if (!r.id) r.id = Date.now() + i;
-          await setDoc(doc(db, 'reviews', String(r.id)), r);
-        }
-      },
-      refresh: fetchCloudData
+      saveReviews: async d => { if(window.CloudDB) await window.CloudDB.saveReviews(d); },
+      refresh: () => { if(window.CloudDB) window.CloudDB.refresh(); }
     };
 
     const $ = s => document.querySelector(s);
@@ -527,11 +499,18 @@
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
         const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
-          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
-          `\n\nTotal Stand: ${money(standTotal)}` +
-          (f.notes ? `\nNotas: ${f.notes}` : '') +
-          `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
+        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:
+` +
+          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('
+') +
+          `
+
+Total Stand: ${money(standTotal)}` +
+          (f.notes ? `
+Notas: ${f.notes}` : '') +
+          `
+Mi WhatsApp: ${f.phone}
+¿Cómo coordinamos pago y entrega?`;
         
         standsHtml += `
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
@@ -715,18 +694,10 @@
       const s = stands.find(x => x.id === id);
       if (s) {
         s.active = !s.active;
-        await DB.saveStands(stands);
-        
-        if (s.active && s.phone) {
-          const welcomeMsg = `¡Hola ${s.name}! 👋\n` +
-            `Te recordamos cómo funciona la gestión de tu puesto en feriavirtual.shop:\n` +
-            `- 🏪 Tu puesto activo 24/7: Tus productos siguen publicados y visibles todo el tiempo.\n` +
-            `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.\n` +
-            `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.\n` +
-            `¡Gracias por sumarte y hacer crecer tu emprendimiento con nosotros! 🚀🧉`;
-          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
+        if (s.active && !s.approvedAt) {
+          s.approvedAt = Date.now();
         }
-
+        await DB.saveStands(stands);
         toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
         route();
       }
@@ -737,6 +708,18 @@
       await DB.removeStand(id);
       toast('Stand eliminado');
       route();
+    };
+
+        window.resetStandCycle = async id => {
+      if (!confirm('¿Reiniciar el contador de 7 días para este stand (nuevo ciclo semanal)?')) return;
+      const stands = DB.getStands();
+      const s = stands.find(x => x.id === id);
+      if (s) {
+        s.approvedAt = Date.now();
+        await DB.saveStands(stands);
+        toast('¡Ciclo semanal reiniciado con éxito 🔄!');
+        route();
+      }
     };
 
     window.exportCSV = () => {
@@ -836,25 +819,47 @@
               ${stands.length ? stands.map(s => {
                 const data = standSales[s.id] || { totalSales: 0, itemsCount: 0, details: [] };
                 const commission = data.totalSales * 0.05;
-                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:\n\n` +
-                  `📦 Productos vendidos: ${data.itemsCount}\n` +
-                  (data.details.length ? `Detalle:\n` + data.details.join('\n') + `\n\n` : '') +
-                  `💵 Total Vendido: ${money(data.totalSales)}\n` +
-                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*\n\n` +
+                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:
+
+` +
+                  `📦 Productos vendidos: ${data.itemsCount}
+` +
+                  (data.details.length ? `Detalle:
+` + data.details.join('
+') + `
+
+` : '') +
+                  `💵 Total Vendido: ${money(data.totalSales)}
+` +
+                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*
+
+` +
                   `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
+
+                const now = Date.now();
+                const oneDay = 24 * 60 * 60 * 1000;
+                const approvedTime = s.approvedAt || s.created || now;
+                const daysPassed = Math.floor((now - approvedTime) / oneDay);
+                const isWeekCompleted = daysPassed >= 7;
 
                 return `
                   <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex-1">
                       <b class="text-base disp text-[#10263a] block">🏪 ${h(s.name)}</b>
                       <span class="text-xs text-slate-500">Teléfono: ${s.phone || 'Sin tel'}</span>
-                      <div class="mt-2 text-xs space-y-1">
+                      <div class="mt-2 text-xs space-y-1.5">
                         <p>Total Vendido: <b class="text-[#10263a]">${money(data.totalSales)}</b></p>
                         <p>Comisión 5% a cobrar: <b class="text-[#ff5a36] text-sm">${money(commission)}</b></p>
+                        <div>
+                          ${isWeekCompleted 
+                            ? `<span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold text-[11px]">🔔 ¡Semana cumplida (${daysPassed} días)! Toca liquidar</span>` 
+                            : `<span class="inline-block bg-blue-50 text-blue-800 px-2.5 py-0.5 rounded-full font-bold text-[11px]">⏳ Ciclo en curso (Día ${daysPassed} de 7)</span>`}
+                        </div>
                       </div>
                     </div>
-                    <div>
+                    <div class="flex flex-col gap-2 w-full sm:w-auto">
                       ${s.phone ? `<a href="https://wa.me/${s.phone}?text=${encodeURIComponent(waText)}" target="_blank" class="btnwa text-xs !py-2 px-3 block text-center">💬 Enviar Liquidación por WhatsApp</a>` : '<span class="text-xs text-red-500">Sin teléfono</span>'}
+                      <button type="button" class="btn2 text-[11px] !py-1.5 !bg-slate-200 !text-[#10263a]" onclick="resetStandCycle(${s.id})">🔄 Reiniciar Ciclo (7 Días)</button>
                     </div>
                   </div>`;
               }).join('') : '<p class="text-center py-4">No hay stands para liquidar.</p>'}
