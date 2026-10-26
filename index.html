@@ -495,22 +495,15 @@
       cart = [];
       saveCart();
 
-      let standsHtml = '';
+            let standsHtml = '';
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
         const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:
-` +
-          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('
-') +
-          `
-
-Total Stand: ${money(standTotal)}` +
-          (f.notes ? `
-Notas: ${f.notes}` : '') +
-          `
-Mi WhatsApp: ${f.phone}
-¿Cómo coordinamos pago y entrega?`;
+        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
+          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
+          `\n\nTotal Stand: ${money(standTotal)}` +
+          (f.notes ? `\nNotas: ${f.notes}` : '') +
+          `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
         
         standsHtml += `
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
