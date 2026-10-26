@@ -691,6 +691,17 @@
           s.approvedAt = Date.now();
         }
         await DB.saveStands(stands);
+
+        if (s.active && s.phone) {
+          const welcomeMsg = `¡Hola ${s.name}! 👋\n` +
+            `Te recordamos cómo funciona la gestión de tu puesto en feriavirtual.shop:\n` +
+            `- 🏪 Tu puesto activo 24/7: Tus productos siguen publicados y visibles todo el tiempo.\n` +
+            `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.\n` +
+            `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.\n` +
+            `¡Gracias por sumarte y hacer crecer tu emprendimiento con nosotros! 🚀🧉`;
+          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
+        }
+
         toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
         route();
       }
@@ -812,21 +823,11 @@
               ${stands.length ? stands.map(s => {
                 const data = standSales[s.id] || { totalSales: 0, itemsCount: 0, details: [] };
                 const commission = data.totalSales * 0.05;
-                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:
-
-` +
-                  `📦 Productos vendidos: ${data.itemsCount}
-` +
-                  (data.details.length ? `Detalle:
-` + data.details.join('
-') + `
-
-` : '') +
-                  `💵 Total Vendido: ${money(data.totalSales)}
-` +
-                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*
-
-` +
+                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:\n\n` +
+                  `📦 Productos vendidos: ${data.itemsCount}\n` +
+                  (data.details.length ? `Detalle:\n` + data.details.join('\n') + `\n\n` : '') +
+                  `💵 Total Vendido: ${money(data.totalSales)}\n` +
+                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*\n\n` +
                   `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
 
                 const now = Date.now();
