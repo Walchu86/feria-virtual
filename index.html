@@ -169,6 +169,20 @@
 
   <script>
     const ADMIN_WHATSAPP = '5493794655867';
+
+    const cleanPhoneNumber = (raw) => {
+      let digits = (raw || '').replace(/\D/g, '');
+      if (digits.startsWith('549') && digits.length > 10) {
+        digits = digits.slice(3);
+      } else if (digits.startsWith('54') && digits.length > 10) {
+        digits = digits.slice(2);
+      }
+      if (digits.startsWith('0')) {
+        digits = digits.slice(1);
+      }
+      return digits;
+    };
+
     const PAYMENT_INFO = {
       alias: 'feria.virtual',
       cvu: '0000076500000039584142',
@@ -415,10 +429,11 @@
                   <b class="text-sm sm:text-base leading-tight mt-1 mb-1 line-clamp-2">${h(p.name)}</b>
                   ${p.specs && p.specs.sizes ? `<p class="text-[11px] text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
                   ${p.specs && p.specs.measures ? `<p class="text-[11px] text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
-                  <div class="mt-auto pt-2">
+                  <div class="mt-auto pt-2 space-y-1.5">
                     ${p.discount > 0 ? `<s class="text-slate-400 text-[11px]">${money(p.price)}</s> <span class="text-green-600 font-bold text-[11px]">-${p.discount}%</span><br>` : ''}
                     <b class="disp text-lg sm:text-xl text-[#ff5a36]">${money(finalP)}</b>
-                    <button type="button" class="btn w-full mt-2 text-xs sm:text-sm !py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
+                    <button type="button" class="btn w-full text-xs sm:text-sm !py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
+                    <a href="https://wa.me/?text=${encodeURIComponent('¡Mirá este producto de la Feria Virtual! ⛺ ' + p.name + ' a solo ' + money(finalP) + ' en el stand ' + stand.name + '. Miralo acá: ' + location.origin + location.pathname + '#/stand/' + stand.id)}" target="_blank" class="btnwa !text-[11px] !py-1.5 block text-center">💬 Compartir WhatsApp</a>
                   </div>
                 </div>
               </div>`;
@@ -596,11 +611,12 @@
           const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
 
           const stands = DB.getStands();
+          const cleanPhone = cleanPhoneNumber(f.phone);
           const newStand = {
             id: Date.now(),
             name: f.name,
             rubro: finalRubro,
-            phone: f.phone,
+            phone: cleanPhone,
             description: f.description,
             email: f.email,
             password: f.password,
@@ -1167,7 +1183,7 @@
 
         stands[idx].name = f.name;
         stands[idx].rubro = f.rubro;
-        stands[idx].phone = f.phone;
+        stands[idx].phone = cleanPhoneNumber(f.phone);
         stands[idx].description = f.description;
         stands[idx].color = f.color;
         stands[idx].logo = logoUrl;
