@@ -742,6 +742,22 @@
       }
     };
 
+            window.adminEditStand = async (id) => {
+          const stands = DB.getStands();
+          const s = stands.find(x => x.id === id);
+          if (!s) return;
+          const newName = prompt("Editar nombre del emprendimiento:", s.name);
+          if (newName === null) return;
+          const newPhone = prompt("Editar WhatsApp (característica y número, ej: 3794...):", s.phone);
+          if (newPhone === null) return;
+
+          s.name = newName.trim();
+          s.phone = cleanPhoneNumber(newPhone);
+          await DB.saveStands(stands);
+          toast('¡Stand actualizado con éxito ✏️!');
+          route();
+        };
+
     window.exportCSV = () => {
       const orders = DB.getOrders();
       let csv = 'ID Pedido,Comprador,WhatsApp,Total,Estado\n';
@@ -776,15 +792,16 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs sm:text-sm min-w-[600px]">
-                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
+                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto / WhatsApp</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
                 ${stands.length ? stands.map(s => `
                   <tr>
                     <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-500">${h(s.email)}</span></td>
                     <td class="p-2">${h(s.rubro)}</td>
-                    <td class="p-2"><a class="underline" href="https://wa.me/${s.phone}" target="_blank">${s.phone}</a></td>
+                    <td class="p-2"><a class="text-green-700 font-bold underline block" href="https://wa.me/${s.phone}" target="_blank">📱 ${s.phone}</a></td>
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
-                    <td class="p-2 space-x-1">
+                    <td class="p-2 space-x-1 whitespace-nowrap">
                       <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
+                      <button class="bg-blue-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminEditStand(${s.id})">Editar ✏️</button>
                       <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
                     </td>
                   </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">No hay stands registrados.</td></tr>'}
