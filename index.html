@@ -25,6 +25,9 @@
     .zoom-container { overflow: hidden; position: relative; cursor: zoom-in; }
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
+  
+    .product-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
   </style>
 
   <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA -->
@@ -330,7 +333,7 @@
     window.closeZoom = () => $('#zoomModal').classList.add('hidden');
 
     async function homeView() {
-      const stands = DB.getStands().filter(s => s.active);
+      const stands = DB.getStands().filter(s => s.active).sort(() => Math.random() - 0.5);
       return `
         <!-- BANNER DE LANZAMIENTO GRATIS -->
         <section class="rounded-3xl bg-gradient-to-r from-amber-500 to-[#ff5a36] text-white p-4 sm:p-6 mb-6 shadow-xl text-center">
@@ -429,6 +432,14 @@
                   <b class="text-sm sm:text-base leading-tight mt-1 mb-1 line-clamp-2">${h(p.name)}</b>
                   ${p.specs && p.specs.sizes ? `<p class="text-[11px] text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
                   ${p.specs && p.specs.measures ? `<p class="text-[11px] text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
+                  ${p.specs && p.specs.gastronomy ? `
+                    <div class="text-[10px] text-slate-600 mb-1 space-y-0.5 bg-slate-50 p-1.5 rounded border border-slate-100">
+                      ${p.specs.gastronomy.presentacion ? `<div><b>Presentación:</b> ${h(p.specs.gastronomy.presentacion)}</div>` : ''}
+                      ${p.specs.gastronomy.tipoCalidad ? `<div><b>Tipo:</b> ${h(p.specs.gastronomy.tipoCalidad)}</div>` : ''}
+                      ${p.specs.gastronomy.variedadSabores ? `<div><b>Variedad:</b> ${h(p.specs.gastronomy.variedadSabores)}</div>` : ''}
+                      ${p.specs.gastronomy.pesoPorciones ? `<div><b>Rinde/Peso:</b> ${h(p.specs.gastronomy.pesoPorciones)}</div>` : ''}
+                      ${p.specs.gastronomy.adicionales ? `<div><b>Extras:</b> ${h(p.specs.gastronomy.adicionales)}</div>` : ''}
+                    </div>` : ''}
                   <div class="mt-auto pt-2 space-y-1.5">
                     ${p.discount > 0 ? `<s class="text-slate-400 text-[11px]">${money(p.price)}</s> <span class="text-green-600 font-bold text-[11px]">-${p.discount}%</span><br>` : ''}
                     <b class="disp text-lg sm:text-xl text-[#ff5a36]">${money(finalP)}</b>
@@ -1084,7 +1095,18 @@
     window.renderDynamicSpecs = (category, existingSpecs = {}) => {
       const container = $('#dynamicSpecsContainer');
       if (!container) return;
-      if (category === 'Ropa') {
+      if (category === 'Comida') {
+        const g = existingSpecs.gastronomy || {};
+        container.innerHTML = `
+          <div class="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <p class="font-bold text-slate-700">🍽️ Especificaciones de Gastronomía:</p>
+            <input class="inp text-xs" name="presentacion" placeholder="1. Presentación/Cantidad (Ej: x 6, docena, unidad)" value="${h(g.presentacion || '')}">
+            <input class="inp text-xs" name="tipoCalidad" placeholder="2. Tipo/Calidad (Ej: Común, especial, combo)" value="${h(g.tipoCalidad || '')}">
+            <input class="inp text-xs" name="variedadSabores" placeholder="3. Variedad/Sabores (Ej: Jamón y queso, dulce de leche)" value="${h(g.variedadSabores || '')}">
+            <input class="inp text-xs" name="pesoPorciones" placeholder="4. Peso/Porciones (Ej: 500g, rinde 2 porciones)" value="${h(g.pesoPorciones || '')}">
+            <input class="inp text-xs" name="adicionales" placeholder="5. Adicionales/Extras (Ej: Sin TACC, con papas, sin sal)" value="${h(g.adicionales || '')}">
+          </div>`;
+      } else if (category === 'Ropa') {
         const sizes = existingSpecs.sizes || ['S', 'M', 'L', 'XL'];
         container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles disponibles (Ropa):</label><div class="flex flex-wrap gap-2">${['S','M','L','XL','XXL'].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(s)?'checked':''}> ${s}</label>`).join('')}</div>`;
       } else if (category === 'Calzado') {
@@ -1116,6 +1138,14 @@
             if (customInput) customInput.value = p.category;
           }
           renderDynamicSpecs(p.category, p.specs || {});
+          if (p.category === 'Comida' && p.specs && p.specs.gastronomy) {
+            const g = p.specs.gastronomy;
+            if ($('input[name="presentacion"]')) $('input[name="presentacion"]').value = g.presentacion || '';
+            if ($('input[name="tipoCalidad"]')) $('input[name="tipoCalidad"]').value = g.tipoCalidad || '';
+            if ($('input[name="variedadSabores"]')) $('input[name="variedadSabores"]').value = g.variedadSabores || '';
+            if ($('input[name="pesoPorciones"]')) $('input[name="pesoPorciones"]').value = g.pesoPorciones || '';
+            if ($('input[name="adicionales"]')) $('input[name="adicionales"]').value = g.adicionales || '';
+          }
         }
       }, 50);
     };
@@ -1134,7 +1164,14 @@
 
       const finalCategory = f.categorySelect === 'Otro' ? (f.customCategory || 'General') : f.categorySelect;
       const sizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(i => i.value);
-      const specs = { sizes, measures: f.measures || '' };
+      const gastronomy = {
+        presentacion: f.presentacion || '',
+        tipoCalidad: f.tipoCalidad || '',
+        variedadSabores: f.variedadSabores || '',
+        pesoPorciones: f.pesoPorciones || '',
+        adicionales: f.adicionales || ''
+      };
+      const specs = { sizes, measures: f.measures || '', gastronomy };
 
       const products = DB.getProducts();
       if (editingProdId) {
