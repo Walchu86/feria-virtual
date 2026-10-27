@@ -68,8 +68,8 @@
 
         if (!memoryStands.length) {
           memoryStands = [
-            { id: 1, name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
-            { id: 2, name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
+            { id: 1, slug: 'panaderia-dona-rosa', name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
+            { id: 2, slug: 'estilo-urbano', name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
           ];
           memoryProducts = [
             { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
@@ -172,6 +172,15 @@
 
   <script>
     const ADMIN_WHATSAPP = '5493794655867';
+
+    const slugify = (str) => {
+      return (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    };
 
     const cleanPhoneNumber = (raw) => {
       let digits = (raw || '').replace(/\D/g, '');
@@ -357,7 +366,7 @@
 
         <div id="standsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           ${stands.length ? stands.map(s => `
-            <a class="stand-card" href="#/stand/${s.id}">
+            <a class="stand-card" href="#/stand/${s.slug || s.id}">
               <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
                 ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
               </div>
@@ -385,7 +394,7 @@
       if (!grid) return;
       const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)));
       grid.innerHTML = stands.length ? stands.map(s => `
-        <a class="stand-card" href="#/stand/${s.id}">
+        <a class="stand-card" href="#/stand/${s.slug || s.id}">
           <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
             ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
           </div>
@@ -399,10 +408,17 @@
     };
 
     async function standView(id) {
-      const stand = DB.getStands().find(s => s.id === Number(id));
-      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
-      const products = DB.getProducts().filter(p => p.stand_id === stand.id && p.active);
-      const reviews = DB.getReviews().filter(r => r.stand_id === stand.id);
+      let stands = DB.getStands();
+      if (!stands.length) {
+        await new Promise(r => setTimeout(r, 800));
+        stands = DB.getStands();
+      }
+      const stand = stands.find(s => String(s.id) === String(id) || s.slug === id);
+      if (!stand) return `<div class="card text-center py-10"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><p class="text-sm text-slate-600 mb-4">El stand al que querés ingresar no existe o fue eliminado.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      if (!stand.active) return `<div class="card text-center py-10 space-y-3"><div class="text-5xl">⏳</div><h1 class="disp text-2xl font-bold">Stand Pendiente o Inactivo</h1><p class="text-sm text-slate-600">Este stand se encuentra pendiente de aprobación por el administrador o está temporalmente inactivo.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      
+      const products = DB.getProducts().filter(p => String(p.stand_id) === String(stand.id) && p.active);
+      const reviews = DB.getReviews().filter(r => String(r.stand_id) === String(stand.id));
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
 
       return `
@@ -444,7 +460,7 @@
                     ${p.discount > 0 ? `<s class="text-slate-400 text-[11px]">${money(p.price)}</s> <span class="text-green-600 font-bold text-[11px]">-${p.discount}%</span><br>` : ''}
                     <b class="disp text-lg sm:text-xl text-[#ff5a36]">${money(finalP)}</b>
                     <button type="button" class="btn w-full text-xs sm:text-sm !py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
-                    <a href="https://wa.me/?text=${encodeURIComponent('¡Mirá este producto de la Feria Virtual! ⛺ ' + p.name + ' a solo ' + money(finalP) + ' en el stand ' + stand.name + '. Miralo acá: ' + location.origin + location.pathname + '#/stand/' + stand.id)}" target="_blank" class="btnwa !text-[11px] !py-1.5 block text-center">💬 Compartir WhatsApp</a>
+                    <a href="https://wa.me/?text=${encodeURIComponent('¡Mirá este producto de la Feria Virtual! ⛺ ' + p.name + ' a solo ' + money(finalP) + ' en el stand ' + stand.name + '. Miralo acá: ' + location.origin + location.pathname + '#/stand/' + (stand.slug || stand.id))}" target="_blank" class="btnwa !text-[11px] !py-1.5 block text-center">💬 Compartir WhatsApp</a>
                   </div>
                 </div>
               </div>`;
@@ -623,8 +639,19 @@
 
           const stands = DB.getStands();
           const cleanPhone = cleanPhoneNumber(f.phone);
+          const standId = Date.now();
+          const baseSlug = slugify(f.name) || String(standId);
+          const existingSlugs = DB.getStands().map(s => s.slug);
+          let finalSlug = baseSlug;
+          let counter = 1;
+          while (existingSlugs.includes(finalSlug)) {
+            finalSlug = `${baseSlug}-${counter}`;
+            counter++;
+          }
+
           const newStand = {
-            id: Date.now(),
+            id: standId,
+            slug: finalSlug,
             name: f.name,
             rubro: finalRubro,
             phone: cleanPhone,
@@ -764,6 +791,9 @@
 
           s.name = newName.trim();
           s.phone = cleanPhoneNumber(newPhone);
+          if (!s.slug) {
+            s.slug = slugify(s.name);
+          }
           await DB.saveStands(stands);
           toast('¡Stand actualizado con éxito ✏️!');
           route();
@@ -933,7 +963,7 @@
       if (!currentVendor) return navigate('#/ingresar');
       const stands = DB.getStands();
       const stand = stands.find(s => s.id === currentVendor.id) || currentVendor;
-      const products = DB.getProducts().filter(p => p.stand_id === stand.id);
+      const products = DB.getProducts().filter(p => String(p.stand_id) === String(stand.id));
 
       if (!stand.active) {
         return `
