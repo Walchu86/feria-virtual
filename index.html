@@ -359,7 +359,12 @@
     window.closeZoom = () => $('#zoomModal').classList.add('hidden');
 
     async function homeView() {
-      const stands = DB.getStands().filter(s => s.active).sort(() => Math.random() - 0.5);
+      let allStands = DB.getStands();
+      if (!allStands.length) {
+        await new Promise(r => setTimeout(r, 800));
+        allStands = DB.getStands();
+      }
+      const stands = allStands.filter(s => s.active).sort(() => Math.random() - 0.5);
       return `
         <!-- BANNER DE LANZAMIENTO GRATIS -->
         <section class="rounded-3xl bg-gradient-to-r from-amber-500 to-[#ff5a36] text-white p-4 sm:p-6 mb-6 shadow-xl text-center">
@@ -425,8 +430,18 @@
     };
 
     async function standView(id) {
-      const stand = DB.getStands().find(s => String(s.id) === String(id) || s.slug === id);
-      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      let stands = DB.getStands();
+      if (!stands.length) {
+        // Damos un margen de espera a Firebase para que responda tras un F5 (refresh)
+        await new Promise(r => setTimeout(r, 1200));
+        stands = DB.getStands();
+      }
+      if (!stands.length) {
+        return `<div class="card text-center py-12"><div class="text-4xl mb-3 animate-spin">⏳</div><h2 class="disp text-xl font-bold">Cargando stand desde la nube...</h2><p class="text-xs text-slate-500 mt-1">Por favor, aguardá un segundo.</p></div>`;
+      }
+      const stand = stands.find(s => String(s.id) === String(id) || s.slug === id);
+      if (!stand) return `<div class="card text-center py-10"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><p class="text-sm text-slate-600 mb-4">El stand al que querés ingresar no existe o fue eliminado.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+      if (!stand.active) return `<div class="card text-center py-10 space-y-3"><div class="text-5xl">⏳</div><h1 class="disp text-2xl font-bold">Stand Pendiente o Inactivo</h1><p class="text-sm text-slate-600">Este stand se encuentra pendiente de aprobación por el administrador o está temporalmente inactivo.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       const products = DB.getProducts().filter(p => String(p.stand_id) === String(stand.id) && p.active);
       const reviews = DB.getReviews().filter(r => r.stand_id === stand.id);
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
@@ -450,7 +465,7 @@
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md">
                 <div class="product-box cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
-                  ${p.image ? `<img src="${h(p.image)}">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
+                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover object-center">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
                   <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-xs">🔍 Ver lupa</div>
                 </div>
                 <div class="p-3 sm:p-4 flex-1 flex flex-col">
