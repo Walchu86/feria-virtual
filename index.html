@@ -26,7 +26,8 @@
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   
-    .product-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .product-box { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+    .product-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 
   </style>
 
@@ -368,7 +369,7 @@
           ${stands.length ? stands.map(s => `
             <a class="stand-card" href="#/stand/${s.slug || s.id}">
               <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
-                ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
+                ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover object-center">` : '<span class="text-2xl">⛺</span>'}
               </div>
               <div class="flex-1 min-w-0">
                 <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mb-0.5 text-white" style="background:${h(s.color || '#ff5a36')}">${h(s.rubro)}</span>
@@ -396,7 +397,7 @@
       grid.innerHTML = stands.length ? stands.map(s => `
         <a class="stand-card" href="#/stand/${s.slug || s.id}">
           <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
-            ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover">` : '<span class="text-2xl">⛺</span>'}
+            ${s.logo ? `<img src="${h(s.logo)}" class="w-full h-full object-cover object-center">` : '<span class="text-2xl">⛺</span>'}
           </div>
           <div class="flex-1 min-w-0">
             <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mb-0.5 text-white" style="background:${h(s.color || '#ff5a36')}">${h(s.rubro)}</span>
@@ -423,7 +424,7 @@
 
       return `
         <div class="rounded-3xl p-5 sm:p-6 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
-          ${stand.logo ? `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+          ${stand.logo ? `<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden shadow-md flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover object-center"></div>` : ''}
           <div class="flex-1 min-w-0 w-full">
             <button type="button" class="underline text-xs sm:text-sm mb-2 font-bold block mx-auto sm:mx-0" onclick="navigate('#/')">← Volver al inicio</button>
             <h1 class="text-2xl sm:text-3xl font-extrabold flex flex-col sm:flex-row items-center sm:items-center gap-2">${h(stand.name)} <span class="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full uppercase">${h(stand.rubro)}</span></h1>
@@ -439,8 +440,8 @@
             const finalP = finalPrice(p);
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md">
-                <div class="aspect-square bg-slate-100 relative cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
-                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
+                <div class="product-box cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
+                  ${p.image ? `<img src="${h(p.image)}">` : '<div class="w-full h-full flex items-center justify-center text-3xl bg-slate-100">📦</div>'}
                   <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-xs">🔍 Ver lupa</div>
                 </div>
                 <div class="p-3 sm:p-4 flex-1 flex flex-col">
@@ -566,7 +567,7 @@
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
-          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver al Feria</button>
         </div>`;
     };
 
@@ -1031,7 +1032,7 @@
                 ${products.length ? products.map(p => `
                   <div class="card !p-3 flex gap-3 items-center">
                     <div class="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                      ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '📦'}
+                      ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover object-center">` : '📦'}
                     </div>
                     <div class="flex-1 min-w-0">
                       <b class="text-sm truncate block">${h(p.name)}</b>
@@ -1078,7 +1079,7 @@
             <label class="block text-xs sm:text-sm font-bold">Logo del Emprendimiento:
               <input type="file" id="settingsLogo" accept="image/*" class="inp mt-1 text-xs bg-white">
             </label>
-            ${stand.logo ? `<div class="w-16 h-16 rounded-full overflow-hidden bg-slate-100"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+            ${stand.logo ? `<div class="w-16 h-16 rounded-full overflow-hidden bg-slate-100"><img src="${h(stand.logo)}" class="w-full h-full object-cover object-center"></div>` : ''}
 
             <label class="block text-xs sm:text-sm font-bold">Color del Stand: <input type="color" name="color" value="${stand.color || '#ff5a36'}" class="ml-2 align-middle h-8 w-14 rounded cursor-pointer"></label>
             <div class="bg-slate-50 p-3 rounded-xl border flex items-center justify-between">
@@ -1095,7 +1096,7 @@
       return `
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div class="flex items-center gap-3">
-            ${stand.logo ? `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
+            ${stand.logo ? `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover object-center"></div>` : ''}
             <h1 class="disp text-2xl sm:text-3xl font-extrabold truncate">⛺ ${h(stand.name)}</h1>
           </div>
           <div class="flex gap-1.5 w-full sm:w-auto overflow-x-auto pb-1">
