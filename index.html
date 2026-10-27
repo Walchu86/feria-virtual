@@ -26,10 +26,11 @@
     .zoom-container img { transition: transform 0.3s ease; }
     .zoom-container.zoomed img { transform: scale(2); cursor: zoom-out; }
   
-    .product-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .product-img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 
-    .product-box { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
-    .product-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .product-box { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e4f0f1; }
+    .product-box img { width: 100%; height: 100%; object-fit: contain; object-position: center; transition: transform 0.3s ease; }
+    .product-box:hover img { transform: scale(1.03); }
   </style>
 
   <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA -->
@@ -424,17 +425,10 @@
     };
 
     async function standView(id) {
-      let stands = DB.getStands();
-      if (!stands.length) {
-        await new Promise(r => setTimeout(r, 800));
-        stands = DB.getStands();
-      }
-      const stand = stands.find(s => String(s.id) === String(id) || s.slug === id);
-      if (!stand) return `<div class="card text-center py-10"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><p class="text-sm text-slate-600 mb-4">El stand al que querés ingresar no existe o fue eliminado.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
-      if (!stand.active) return `<div class="card text-center py-10 space-y-3"><div class="text-5xl">⏳</div><h1 class="disp text-2xl font-bold">Stand Pendiente o Inactivo</h1><p class="text-sm text-slate-600">Este stand se encuentra pendiente de aprobación por el administrador o está temporalmente inactivo.</p><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
-      
+      const stand = DB.getStands().find(s => String(s.id) === String(id) || s.slug === id);
+      if (!stand || !stand.active) return `<div class="card text-center"><h1 class="text-xl font-bold mb-2">Stand no encontrado</h1><button type="button" class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       const products = DB.getProducts().filter(p => String(p.stand_id) === String(stand.id) && p.active);
-      const reviews = DB.getReviews().filter(r => String(r.stand_id) === String(stand.id));
+      const reviews = DB.getReviews().filter(r => r.stand_id === stand.id);
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
 
       return `
@@ -456,7 +450,7 @@
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md">
                 <div class="product-box cursor-pointer group" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
-                  ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover object-center">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
+                  ${p.image ? `<img src="${h(p.image)}">` : '<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>'}
                   <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white font-bold text-xs">🔍 Ver lupa</div>
                 </div>
                 <div class="p-3 sm:p-4 flex-1 flex flex-col">
@@ -655,19 +649,8 @@
 
           const stands = DB.getStands();
           const cleanPhone = cleanPhoneNumber(f.phone);
-          const standId = Date.now();
-          const baseSlug = slugify(f.name) || String(standId);
-          const existingSlugs = DB.getStands().map(s => s.slug);
-          let finalSlug = baseSlug;
-          let counter = 1;
-          while (existingSlugs.includes(finalSlug)) {
-            finalSlug = `${baseSlug}-${counter}`;
-            counter++;
-          }
-
           const newStand = {
-            id: standId,
-            slug: finalSlug,
+            id: Date.now(),
             name: f.name,
             rubro: finalRubro,
             phone: cleanPhone,
@@ -807,9 +790,6 @@
 
           s.name = newName.trim();
           s.phone = cleanPhoneNumber(newPhone);
-          if (!s.slug) {
-            s.slug = slugify(s.name);
-          }
           await DB.saveStands(stands);
           toast('¡Stand actualizado con éxito ✏️!');
           route();
@@ -1047,7 +1027,7 @@
                 ${products.length ? products.map(p => `
                   <div class="card !p-3 flex gap-3 items-center">
                     <div class="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                      ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover object-center">` : '📦'}
+                      ${p.image ? `<img src="${h(p.image)}" class="w-full h-full object-cover">` : '📦'}
                     </div>
                     <div class="flex-1 min-w-0">
                       <b class="text-sm truncate block">${h(p.name)}</b>
@@ -1328,4 +1308,4 @@
   </script>
 </body>
 </html>
-```[cite: 15]
+```[cite: 16]
