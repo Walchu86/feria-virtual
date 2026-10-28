@@ -170,11 +170,11 @@
     </div>
   </div>
 
-  <!-- Modal Zoom -->
-  <div id="zoomModal" class="fixed inset-0 z-50 bg-black/80 hidden flex items-center justify-center p-3" onclick="closeZoom()">
-    <div class="bg-white rounded-3xl p-4 max-w-lg w-full relative overflow-hidden" onclick="event.stopPropagation()">
-      <button type="button" class="absolute top-3 right-3 bg-slate-200 rounded-full w-8 h-8 font-bold flex items-center justify-center" onclick="closeZoom()">✕</button>
-      <div id="zoomContent" class="text-center"></div>
+  <!-- Modal Zoom Optimizado para Celulares con Botón X Visible -->
+  <div id="zoomModal" class="fixed inset-0 z-50 bg-black/85 hidden flex items-center justify-center p-4" onclick="closeZoom()">
+    <div class="bg-white rounded-3xl p-5 max-w-lg w-full relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+      <button type="button" class="absolute top-3 right-3 bg-[#10263a] text-white rounded-full w-10 h-10 font-bold flex items-center justify-center text-lg shadow-lg z-20 hover:bg-[#ff5a36] transition-colors" onclick="closeZoom()">✕</button>
+      <div id="zoomContent" class="text-center pt-2"></div>
     </div>
   </div>
 
@@ -210,6 +210,19 @@
         digits = digits.slice(1);
       }
       return digits;
+    };
+
+    const parsePrice = (val) => {
+      if (!val) return 0;
+      let s = String(val).trim();
+      if (s.includes('.') && !s.includes(',')) {
+        s = s.replace(/\./g, '');
+      } else if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else if (s.includes(',')) {
+        s = s.replace(',', '.');
+      }
+      return Number(s) || 0;
     };
 
     const PAYMENT_INFO = {
@@ -296,10 +309,28 @@
       if (show) {
         renderCartDrawerContent();
         drawer.classList.remove('hidden');
+        history.pushState({ modal: 'cart' }, '');
       } else {
         drawer.classList.add('hidden');
       }
     };
+
+    window.addEventListener('popstate', (e) => {
+      const drawer = $('#cartDrawer');
+      const zoomModal = $('#zoomModal');
+      let closed = false;
+      if (drawer && !drawer.classList.contains('hidden')) {
+        drawer.classList.add('hidden');
+        closed = true;
+      }
+      if (zoomModal && !zoomModal.classList.contains('hidden')) {
+        zoomModal.classList.add('hidden');
+        closed = true;
+      }
+      if (closed) {
+        e.preventDefault();
+      }
+    });
 
     function renderCartDrawerContent() {
       const cdc = $('#cartDrawerContent');
@@ -355,8 +386,12 @@
         <p class="text-sm text-slate-600 mt-1">${h(desc || 'Sin descripción adicional.')}</p>
         <p class="text-xs text-slate-400 mt-2">💡 Tocá la foto para hacer zoom.</p>`;
       $('#zoomModal').classList.remove('hidden');
+      history.pushState({ modal: 'zoom' }, '');
     };
-    window.closeZoom = () => $('#zoomModal').classList.add('hidden');
+
+    window.closeZoom = () => {
+      $('#zoomModal').classList.add('hidden');
+    };
 
     async function homeView() {
       let allStands = DB.getStands();
@@ -432,7 +467,6 @@
     async function standView(id) {
       let stands = DB.getStands();
       if (!stands.length) {
-        // Damos un margen de espera a Firebase para que responda tras un F5 (refresh)
         await new Promise(r => setTimeout(r, 1200));
         stands = DB.getStands();
       }
@@ -1014,7 +1048,7 @@
 
               <div id="dynamicSpecsContainer"></div>
               <div class="grid grid-cols-2 gap-2">
-                <input class="inp text-sm" name="price" type="number" placeholder="Precio ($)" value="${editingP.price || ''}" required>
+                <input class="inp text-sm" name="price" type="text" placeholder="Precio ($)" value="${editingP.price || ''}" required>
                 <input class="inp text-sm" name="discount" type="number" placeholder="% Desc. (opc)" value="${editingP.discount || ''}" min="0" max="95">
               </div>
               <textarea class="inp text-sm" name="description" rows="2" placeholder="Descripción...">${h(editingP.description || '')}</textarea>
@@ -1218,10 +1252,10 @@
       if (editingProdId) {
         const idx = products.findIndex(p => p.id === editingProdId);
         if (idx !== -1) {
-          products[idx] = { ...products[idx], name: f.name, category: finalCategory, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs };
+          products[idx] = { ...products[idx], name: f.name, category: finalCategory, price: parsePrice(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs };
         }
       } else {
-        products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: finalCategory, price: Number(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
+        products.push({ id: Date.now(), stand_id: currentVendor.id, name: f.name, category: finalCategory, price: parsePrice(f.price), discount: Number(f.discount || 0), description: f.description, image: imgUrl, specs, active: true });
       }
       await DB.saveProducts(products);
       editingProdId = null;
@@ -1316,11 +1350,10 @@
 
     window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#/');
+      if (!location.hash) location.replace('#('/');
       renderNav();
       window.route();
     });
   </script>
 </body>
 </html>
-```[cite: 16]
