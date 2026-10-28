@@ -246,11 +246,18 @@
       removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
       saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
-      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
+      removeProduct: async id => { if(window.CloudDB) window.CloudDB.removeProduct(id); },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
       saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: async d => { if(window.CloudDB) await window.CloudDB.saveReviews(d); },
+      saveReviews: async d => {
+        memoryReviews = arr;
+        for (let i = 0; i < arr.length; i++) {
+          let r = arr[i];
+          if (!r.id) r.id = Date.now() + i;
+          await setDoc(doc(db, 'reviews', String(r.id)), r);
+        }
+      },
       refresh: () => { if(window.CloudDB) window.CloudDB.refresh(); }
     };
 
@@ -425,6 +432,17 @@
       localStorage.removeItem('fv_session');
       navigate('#/admin');
       toast('Regresando al Panel Superadmin');
+    };
+
+    window.recoverPassword = () => {
+      const email = prompt("Ingresá el correo electrónico con el que registraste tu stand:");
+      if (!email) return;
+      const stands = DB.getStands();
+      const stand = stands.find(s => s.email && s.email.toLowerCase() === email.toLowerCase());
+      if (!stand) {
+        return alert("No se encontró ningún stand registrado con ese correo electrónico.");
+      }
+      alert("¡Stand encontrado! Tu contraseña actual es: " + stand.password + "\n\nAnotala en un lugar seguro para poder ingresar.");
     };
 
     async function homeView() {
@@ -659,7 +677,7 @@
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
-          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver al Inicio</button>
         </div>`;
     };
 
@@ -695,6 +713,7 @@
           <input class="inp text-sm" name="email" type="email" placeholder="Correo electrónico" required>
           <input class="inp text-sm" name="password" type="password" placeholder="Contraseña" required minlength="6">
           <button class="btn text-base py-3" id="submitAuthBtn">${isReg ? 'Registrar mi Stand Gratis' : 'Ingresar al Panel'}</button>
+          ${!isReg ? `<button type="button" class="w-full text-center text-xs text-amber-700 font-bold pt-1 underline" onclick="recoverPassword()">¿Olvidaste tu contraseña?</button>` : ''}
           <button type="button" class="w-full text-center text-xs sm:text-sm underline text-slate-600 pt-2" onclick="navigate('#/${isReg ? 'ingresar' : 'registro'}')">${isReg ? '¿Ya tenés stand? Ingresá acá' : '¿Querés crear tu stand? Registrate'}</button>
         </form>`;
     }
@@ -912,10 +931,10 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs sm:text-sm min-w-[600px]">
-                <tr><th class="p-2">Negocio</th><th class="p-2">Rubro</th><th class="p-2">Contacto / WhatsApp</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
+                <tr><th class="p-2">Negocio / Credenciales</th><th class="p-2">Rubro</th><th class="p-2">Contacto / WhatsApp</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
                 ${stands.length ? stands.map(s => `
                   <tr>
-                    <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-500">${h(s.email)}</span></td>
+                    <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-600">📧 <b>${h(s.email)}</b></span><br><span class="text-[10px] text-red-600 font-bold">🔑 Clave: ${h(s.password || 'Sin clave')}</span></td>
                     <td class="p-2">${h(s.rubro)}</td>
                     <td class="p-2"><a class="text-green-700 font-bold underline block" href="https://wa.me/${s.phone}" target="_blank">📱 ${s.phone}</a></td>
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
@@ -1370,7 +1389,7 @@
 
     // --- ENRUTADOR PRINCIPAL ---
     window.route = async function() {
-      const hash = location.hash || '#/';
+      const hash = location.hash || '#/s';
       const [path, arg] = hash.replace(/^#\/?/, '').split('/');
       renderNav();
       try {
@@ -1400,4 +1419,3 @@
   </script>
 </body>
 </html>
-```[cite: 16]
