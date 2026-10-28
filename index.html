@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Feria Virtual · feriavirtual.shop</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎪%3C/text%3E%3C/svg%3E">
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27[http://www.w3.org/2000/svg%27](http://www.w3.org/2000/svg%27) viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎪%3C/text%3E%3C/svg%3E">
+  <link href="[https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap)" rel="stylesheet">
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
   <style>
     body { font-family: 'DM Sans', sans-serif; background: #e4f0f1; color: #10263a; overflow-x: hidden; }
     h1, h2, h3, .disp { font-family: 'Bricolage Grotesque', sans-serif; }
@@ -35,8 +35,8 @@
 
   <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js)";
+    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "[https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js)";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQgmq6xVihzWN-f0LbzlzZrSecYeEnjs",
@@ -170,7 +170,7 @@
     </div>
   </div>
 
-  <!-- Modal Zoom Optimizado para Celulares con Botón X Visible -->
+  <!-- Modal Zoom Optimizado para Celulares -->
   <div id="zoomModal" class="fixed inset-0 z-50 bg-black/85 hidden flex items-center justify-center p-4" onclick="closeZoom()">
     <div class="bg-white rounded-3xl p-5 max-w-lg w-full relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
       <button type="button" class="absolute top-3 right-3 bg-[#10263a] text-white rounded-full w-10 h-10 font-bold flex items-center justify-center text-lg shadow-lg z-20 hover:bg-[#ff5a36] transition-colors" onclick="closeZoom()">✕</button>
@@ -181,7 +181,7 @@
   <footer class="bg-[#10263a] text-white py-6 text-center text-xs sm:text-sm mt-12 px-4">
     <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
-    <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
+    <a href="[https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual](https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual)" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
     <div class="mt-2"><a href="#/admin" class="text-[11px] text-slate-400 underline">🔒 Acceso Superadministrador</a></div>
   </footer>
 
@@ -212,19 +212,6 @@
       return digits;
     };
 
-    const parsePrice = (val) => {
-      if (!val) return 0;
-      let s = String(val).trim();
-      if (s.includes('.') && !s.includes(',')) {
-        s = s.replace(/\./g, '');
-      } else if (s.includes(',') && s.includes('.')) {
-        s = s.replace(/\./g, '').replace(',', '.');
-      } else if (s.includes(',')) {
-        s = s.replace(',', '.');
-      }
-      return Number(s) || 0;
-    };
-
     const PAYMENT_INFO = {
       alias: 'feria.virtual',
       cvu: '0000076500000039584142',
@@ -241,7 +228,7 @@
       formData.append('file', file);
       formData.append('upload_preset', UPLOAD_PRESET);
       try {
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        const res = await fetch(`[https://api.cloudinary.com/v1_1/$](https://api.cloudinary.com/v1_1/$){CLOUD_NAME}/image/upload`, {
           method: 'POST',
           body: formData
         });
@@ -271,6 +258,20 @@
     const app = $('#app');
     const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const money = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    
+    const parsePrice = (val) => {
+      if (!val) return 0;
+      let s = String(val).trim();
+      if (s.includes('.') && !s.includes(',')) {
+        s = s.replace(/\./g, '');
+      } else if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else if (s.includes(',')) {
+        s = s.replace(',', '.');
+      }
+      return Number(s) || 0;
+    };
+
     const finalPrice = p => Math.round(Number(p.price) * (1 - (Number(p.discount) || 0) / 100));
     const toast = m => {
       const t = $('#toast');
@@ -489,7 +490,7 @@
             <p class="opacity-90 text-xs sm:text-sm mt-1 max-w-xl">${h(stand.description || '')}</p>
             <p class="text-xs sm:text-sm mt-2 opacity-90">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
           </div>
-          ${stand.phone ? `<div class="w-full sm:w-auto mt-2 sm:mt-0"><a class="btnwa text-sm py-2 px-4 inline-block" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a></div>` : ''}
+          ${stand.phone ? `<div class="w-full sm:w-auto mt-2 sm:mt-0"><a class="btnwa text-sm py-2 px-4 inline-block" href="[https://wa.me/$](https://wa.me/$){stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual y quiero hacerte una consulta.')}" target="_blank">💬 Contactar por WhatsApp</a></div>` : ''}
         </div>
 
         <h2 class="text-xl sm:text-2xl font-extrabold mb-4">Productos del Stand</h2>
@@ -519,7 +520,7 @@
                     ${p.discount > 0 ? `<s class="text-slate-400 text-[11px]">${money(p.price)}</s> <span class="text-green-600 font-bold text-[11px]">-${p.discount}%</span><br>` : ''}
                     <b class="disp text-lg sm:text-xl text-[#ff5a36]">${money(finalP)}</b>
                     <button type="button" class="btn w-full text-xs sm:text-sm !py-2" onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
-                    <a href="https://wa.me/?text=${encodeURIComponent('¡Mirá este producto de la Feria Virtual! ⛺ ' + p.name + ' a solo ' + money(finalP) + ' en el stand ' + stand.name + '. Miralo acá: ' + location.origin + location.pathname + '#/stand/' + (stand.slug || stand.id))}" target="_blank" class="btnwa !text-[11px] !py-1.5 block text-center">💬 Compartir WhatsApp</a>
+                    <a href="[https://wa.me/?text=$](https://wa.me/?text=$){encodeURIComponent('¡Mirá este producto de la Feria Virtual! ⛺ ' + p.name + ' a solo ' + money(finalP) + ' en el stand ' + stand.name + '. Miralo acá: ' + location.origin + location.pathname + '#/stand/' + (stand.slug || stand.id))}" target="_blank" class="btnwa !text-[11px] !py-1.5 block text-center">💬 Compartir WhatsApp</a>
                   </div>
                 </div>
               </div>`;
@@ -613,7 +614,7 @@
               <span class="disp text-[#ff5a36] font-bold">${money(standTotal)}</span>
             </div>
             <p class="text-xs text-slate-600">${st.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
-            ${st.phone ? `<a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm !py-2.5 block text-center">💬 Enviar WhatsApp a ${h(st.name)}</a>` : '<p class="text-xs text-red-500">Stand sin teléfono registrado</p>'}
+            ${st.phone ? `<a href="[https://wa.me/$](https://wa.me/$){st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm !py-2.5 block text-center">💬 Enviar WhatsApp a ${h(st.name)}</a>` : '<p class="text-xs text-red-500">Stand sin teléfono registrado</p>'}
           </div>`;
       });
 
@@ -715,7 +716,7 @@
           stands.push(newStand);
           await DB.saveStands(stands);
 
-          window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Acabo de registrar mi stand "' + f.name + '" en la Feria Virtual por el lanzamiento gratuito. Por favor, aprobámelo.')}`, '_blank');
+          window.open(`[https://wa.me/$](https://wa.me/$){ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Acabo de registrar mi stand "' + f.name + '" en la Feria Virtual por el lanzamiento gratuito. Por favor, aprobámelo.')}`, '_blank');
           
           app.innerHTML = `
             <div class="card max-w-lg mx-auto text-center py-10 space-y-3">
@@ -801,7 +802,7 @@
             `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.\n` +
             `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.\n` +
             `¡Gracias por sumarte y hacer crecer tu emprendimiento con nosotros! 🚀🧉`;
-          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
+          window.open(`[https://wa.me/$](https://wa.me/$){s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
         }
 
         toast(s.active ? 'Stand aprobado y activado ✅' : 'Stand pausado');
@@ -883,7 +884,7 @@
                   <tr>
                     <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-500">${h(s.email)}</span></td>
                     <td class="p-2">${h(s.rubro)}</td>
-                    <td class="p-2"><a class="text-green-700 font-bold underline block" href="https://wa.me/${s.phone}" target="_blank">📱 ${s.phone}</a></td>
+                    <td class="p-2"><a class="text-green-700 font-bold underline block" href="[https://wa.me/$](https://wa.me/$){s.phone}" target="_blank">📱 ${s.phone}</a></td>
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
                     <td class="p-2 space-x-1 whitespace-nowrap">
                       <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
@@ -908,7 +909,7 @@
                   <tr>
                     <td class="p-2">#${o.id}</td>
                     <td class="p-2">${new Date(o.date).toLocaleString('es-AR')}</td>
-                    <td class="p-2"><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
+                    <td class="p-2"><b>${h(o.buyer.name)}</b><br><a class="underline" href="[https://wa.me/$](https://wa.me/$){o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
                     <td class="p-2">${o.cart.map(i=>`${i.qty}x ${i.name} (${i.standName})`).join(', ')}</td>
                     <td class="p-2"><b>${money(o.total)}</b></td>
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
@@ -971,7 +972,7 @@
                       </div>
                     </div>
                     <div class="flex flex-col gap-2 w-full sm:w-auto">
-                      ${s.phone ? `<a href="https://wa.me/${s.phone}?text=${encodeURIComponent(waText)}" target="_blank" class="btnwa text-xs !py-2 px-3 block text-center">💬 Enviar Liquidación por WhatsApp</a>` : '<span class="text-xs text-red-500">Sin teléfono</span>'}
+                      ${s.phone ? `<a href="[https://wa.me/$](https://wa.me/$){s.phone}?text=${encodeURIComponent(waText)}" target="_blank" class="btnwa text-xs !py-2 px-3 block text-center">💬 Enviar Liquidación por WhatsApp</a>` : '<span class="text-xs text-red-500">Sin teléfono</span>'}
                       <button type="button" class="btn2 text-[11px] !py-1.5 !bg-slate-200 !text-[#10263a]" onclick="resetStandCycle(${s.id})">🔄 Reiniciar Ciclo (7 Días)</button>
                     </div>
                   </div>`;
@@ -1102,7 +1103,7 @@
                 ${orders.length ? orders.map(o => `
                   <tr>
                     <td>#${o.id}</td>
-                    <td><b>${h(o.buyer.name)}</b><br><a class="underline" href="https://wa.me/${o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
+                    <td><b>${h(o.buyer.name)}</b><br><a class="underline" href="[https://wa.me/$](https://wa.me/$){o.buyer.phone}" target="_blank">${o.buyer.phone}</a></td>
                     <td>${o.cart.filter(i=>i.standId===stand.id).map(i=>`${i.qty}x ${i.name}`).join(', ')}</td>
                     <td><b>${money(o.cart.filter(i=>i.standId===stand.id).reduce((a,b)=>a+(b.price*b.qty),0))}</b></td>
                     <td><span class="px-2 py-0.5 rounded-full text-xs font-bold ${o.delivered?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${o.delivered?'Entregado':'Pendiente'}</span></td>
@@ -1350,7 +1351,7 @@
 
     window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#('/');
+      if (!location.hash) location.replace('#/');
       renderNav();
       window.route();
     });
