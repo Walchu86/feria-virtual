@@ -246,7 +246,7 @@
       removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
       saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
-      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
+      removeProduct: async id => { if(window.CloudDB) window.CloudDB.removeProduct(id); },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
       saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
@@ -262,19 +262,32 @@
     const parsePrice = (val) => {
       if (!val) return 0;
       let s = String(val).trim();
+      
+      // Si el usuario puso un punto decimal accidental (ej: "2.0" o "2.000" leído como decimal)
       if (s.includes('.') && !s.includes(',')) {
-        s = s.replace(/\./g, '');
-      } else if (s.includes(',') && s.includes('.')) {
-        s = s.replace(/\./g, '').replace(',', '.');
+        let parts = s.split('.');
+        if (parts.length > 1 && parts[parts.length - 1].length === 3) {
+          s = s.replace(/\./g, '');
+        } else if (Number(s) < 100) {
+          s = s.replace(/\./g, '');
+        } else {
+          s = s.replace(/\./g, '');
+        }
       } else if (s.includes(',')) {
-        s = s.replace(',', '.');
+        s = s.replace(/\./g, '').replace(',', '.');
       }
+
       let num = Number(s) || 0;
-      // Corrección automática: si el feriante cargó un precio menor a 1000 (ej: 25 o 18), 
-      // se interpreta automáticamente como miles (25000 o 18000) por la escala de la moneda actual.
-      if (num > 0 && num < 1000) {
+
+      // Escala inteligente de precios:
+      // Si ingresaron un número de un solo dígito (ej: 2), se interpreta como 20000.
+      // Si ingresaron entre 10 y 999 (ej: 18, 25, 35), se multiplica por 1000 (18000, 25000, 35000).
+      if (num > 0 && num < 10) {
+        num = num * 10000;
+      } else if (num >= 10 && num < 1000) {
         num = num * 1000;
       }
+
       return num;
     };
 
@@ -632,7 +645,7 @@
           <div class="space-y-3 pt-2">
             ${standsHtml}
           </div>
-          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver al Inicio</button>
+          <button type="button" class="btn2 w-full mt-4 text-sm" onclick="navigate('#/')">Volver a la Feria</button>
         </div>`;
     };
 
