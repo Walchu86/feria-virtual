@@ -246,7 +246,7 @@
       removeStand: async id => { if(window.CloudDB) await window.CloudDB.removeStand(id); },
       getProducts: () => window.CloudDB ? window.CloudDB.getProducts() : [],
       saveProducts: async d => { if(window.CloudDB) await window.CloudDB.saveProducts(d); },
-      removeProduct: async id => { if(window.CloudDB) window.CloudDB.removeProduct(id); },
+      removeProduct: async id => { if(window.CloudDB) await window.CloudDB.removeProduct(id); },
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
       saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
@@ -262,8 +262,6 @@
     const parsePrice = (val) => {
       if (!val) return 0;
       let s = String(val).trim();
-      
-      // Si el usuario puso un punto decimal accidental (ej: "2.0" o "2.000" leído como decimal)
       if (s.includes('.') && !s.includes(',')) {
         let parts = s.split('.');
         if (parts.length > 1 && parts[parts.length - 1].length === 3) {
@@ -279,9 +277,6 @@
 
       let num = Number(s) || 0;
 
-      // Escala inteligente de precios:
-      // Si ingresaron un número de un solo dígito (ej: 2), se interpreta como 20000.
-      // Si ingresaron entre 10 y 999 (ej: 18, 25, 35), se multiplica por 1000 (18000, 25000, 35000).
       if (num > 0 && num < 10) {
         num = num * 10000;
       } else if (num >= 10 && num < 1000) {
@@ -411,6 +406,25 @@
 
     window.closeZoom = () => {
       $('#zoomModal').classList.add('hidden');
+    };
+
+    window.adminLoginAsStand = (standId) => {
+      const stands = DB.getStands();
+      const stand = stands.find(s => s.id === standId);
+      if (!stand) return toast('Stand no encontrado');
+      currentVendor = stand;
+      localStorage.setItem('fv_session', JSON.stringify(stand));
+      localStorage.setItem('fv_admin_impersonate', 'true');
+      toast('Ingresando al panel de ' + stand.name + ' 🔑');
+      navigate('#/panel');
+    };
+
+    window.exitAdminAsStand = () => {
+      localStorage.removeItem('fv_admin_impersonate');
+      currentVendor = null;
+      localStorage.removeItem('fv_session');
+      navigate('#/admin');
+      toast('Regresando al Panel Superadmin');
     };
 
     async function homeView() {
@@ -907,6 +921,7 @@
                     <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
                     <td class="p-2 space-x-1 whitespace-nowrap">
                       <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
+                      <button class="bg-amber-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminLoginAsStand(${s.id})">Entrar 🔑</button>
                       <button class="bg-blue-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminEditStand(${s.id})">Editar ✏️</button>
                       <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
                     </td>
@@ -1040,6 +1055,13 @@
           </div>`;
       }
 
+      const isImpersonating = localStorage.getItem('fv_admin_impersonate') === 'true';
+      const impersonateBanner = isImpersonating ? `
+        <div class="bg-amber-400 text-[#10263a] font-bold p-3 rounded-2xl mb-4 flex items-center justify-between text-xs sm:text-sm shadow-md">
+          <span>⚠️ Estás asistiendo y editando el stand de "${h(stand.name)}" como Superadministrador.</span>
+          <button onclick="exitAdminAsStand()" class="bg-[#10263a] text-white px-3 py-1.5 rounded-xl shrink-0 shadow">Volver al Admin 🔒</button>
+        </div>` : '';
+
       let tabContent = '';
       if (vendorTab === 'products') {
         const editingP = products.find(p => p.id === editingProdId) || {};
@@ -1158,6 +1180,7 @@
       }
 
       return `
+        ${impersonateBanner}
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div class="flex items-center gap-3">
             ${stand.logo ? `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white overflow-hidden shadow flex items-center justify-center shrink-0"><img src="${h(stand.logo)}" class="w-full h-full object-cover"></div>` : ''}
@@ -1377,3 +1400,4 @@
   </script>
 </body>
 </html>
+```[cite: 16]
