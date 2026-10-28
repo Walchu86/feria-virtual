@@ -269,7 +269,13 @@
       } else if (s.includes(',')) {
         s = s.replace(',', '.');
       }
-      return Number(s) || 0;
+      let num = Number(s) || 0;
+      // Corrección automática: si el feriante cargó un precio menor a 1000 (ej: 25 o 18), 
+      // se interpreta automáticamente como miles (25000 o 18000) por la escala de la moneda actual.
+      if (num > 0 && num < 1000) {
+        num = num * 1000;
+      }
+      return num;
     };
 
     const finalPrice = p => Math.round(Number(p.price) * (1 - (Number(p.discount) || 0) / 100));
