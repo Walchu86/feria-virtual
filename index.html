@@ -1026,7 +1026,7 @@
                         <p>Comisión 5% a cobrar: <b class="text-[#ff5a36] text-sm">${money(commission)}</b></p>
                         <div>
                           ${isWeekCompleted 
-                            ? `<span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold text-[11px]">🔔 ¡Semana cumplida (${daysPassed} days)! Toca liquidar</span>` 
+                            ? `<span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold text-[11px]">🔔 ¡Semana cumplida (${daysPassed} días)! Toca liquidar</span>` 
                             : `<span class="inline-block bg-blue-50 text-blue-800 px-2.5 py-0.5 rounded-full font-bold text-[11px]">⏳ Ciclo en curso (Día ${daysPassed} de 7)</span>`}
                         </div>
                       </div>
@@ -1424,7 +1424,7 @@
 
     window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#/s');
+      if (!location.hash) location.replace('#/');
       renderNav();
       window.route();
     });
