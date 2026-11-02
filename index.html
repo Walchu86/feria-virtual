@@ -60,7 +60,6 @@
         const standsSnap = await getDocs(collection(db, 'stands'));
         memoryStands = standsSnap.docs.map(d => d.data());
 
-        // Migración automática para stands antiguos sin slug
         let needsMigration = false;
         memoryStands.forEach(s => {
           if (!s.slug && s.name) {
@@ -250,7 +249,7 @@
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
       saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: async d => {
+      saveReviews: async arr => {
         memoryReviews = arr;
         for (let i = 0; i < arr.length; i++) {
           let r = arr[i];
@@ -559,6 +558,7 @@
                   <b class="text-sm sm:text-base leading-tight mt-1 mb-1 line-clamp-2">${h(p.name)}</b>
                   ${p.specs && p.specs.sizes ? `<p class="text-[11px] text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
                   ${p.specs && p.specs.measures ? `<p class="text-[11px] text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
+                  ${p.specs && p.specs.perfumeSize ? `<p class="text-[11px] text-slate-600 mb-1"><b>Tamaño:</b> ${h(p.specs.perfumeSize)}</p>` : ''}
                   ${p.specs && p.specs.gastronomy ? `
                     <div class="text-[10px] text-slate-600 mb-1 space-y-0.5 bg-slate-50 p-1.5 rounded border border-slate-100">
                       ${p.specs.gastronomy.presentacion ? `<div><b>Presentación:</b> ${h(p.specs.gastronomy.presentacion)}</div>` : ''}
@@ -648,7 +648,7 @@
       cart = [];
       saveCart();
 
-            let standsHtml = '';
+      let standsHtml = '';
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
         const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
@@ -696,6 +696,7 @@
               <option value="Comida">Comida / Gastronomía</option>
               <option value="Ropa">Ropa / Indumentaria</option>
               <option value="Calzado">Calzado</option>
+              <option value="Perfumeria">Perfumería</option>
               <option value="Manualidades">Manualidades / Decoración</option>
               <option value="Accesorios">Accesorios y otros</option>
               <option value="Otro">Otro (Escribir rubro...)</option>
@@ -801,7 +802,6 @@
       toast('Sesión cerrada');
     };
 
-    // --- PANEL SUPERADMIN (UNIFICADO Y SEGURO) ---
     let adminLogged = localStorage.getItem('fv_admin_logged') === 'true';
     let adminTab = 'stands';
 
@@ -869,7 +869,7 @@
       route();
     };
 
-        window.resetStandCycle = async id => {
+    window.resetStandCycle = async id => {
       if (!confirm('¿Reiniciar el contador de 7 días para este stand (nuevo ciclo semanal)?')) return;
       const stands = DB.getStands();
       const s = stands.find(x => x.id === id);
@@ -881,21 +881,21 @@
       }
     };
 
-            window.adminEditStand = async (id) => {
-          const stands = DB.getStands();
-          const s = stands.find(x => x.id === id);
-          if (!s) return;
-          const newName = prompt("Editar nombre del emprendimiento:", s.name);
-          if (newName === null) return;
-          const newPhone = prompt("Editar WhatsApp (característica y número, ej: 3794...):", s.phone);
-          if (newPhone === null) return;
+    window.adminEditStand = async (id) => {
+      const stands = DB.getStands();
+      const s = stands.find(x => x.id === id);
+      if (!s) return;
+      const newName = prompt("Editar nombre del emprendimiento:", s.name);
+      if (newName === null) return;
+      const newPhone = prompt("Editar WhatsApp (característica y número, ej: 3794...):", s.phone);
+      if (newPhone === null) return;
 
-          s.name = newName.trim();
-          s.phone = cleanPhoneNumber(newPhone);
-          await DB.saveStands(stands);
-          toast('¡Stand actualizado con éxito ✏️!');
-          route();
-        };
+      s.name = newName.trim();
+      s.phone = cleanPhoneNumber(newPhone);
+      await DB.saveStands(stands);
+      toast('¡Stand actualizado con éxito ✏️!');
+      route();
+    };
 
     window.exportCSV = () => {
       const orders = DB.getOrders();
@@ -1084,7 +1084,7 @@
       let tabContent = '';
       if (vendorTab === 'products') {
         const editingP = products.find(p => p.id === editingProdId) || {};
-        const standardCats = ['Comida', 'Ropa', 'Calzado', 'Manualidades'];
+        const standardCats = ['Comida', 'Ropa', 'Calzado', 'Perfumeria', 'Manualidades'];
         const isCustomCat = editingP.category && !standardCats.includes(editingP.category);
         const selectedCatVal = isCustomCat ? 'Otro' : (editingP.category || '');
 
@@ -1099,6 +1099,7 @@
                 <option value="Comida" ${selectedCatVal==='Comida'?'selected':''}>Comida</option>
                 <option value="Ropa" ${selectedCatVal==='Ropa'?'selected':''}>Ropa / Indumentaria</option>
                 <option value="Calzado" ${selectedCatVal==='Calzado'?'selected':''}>Calzado</option>
+                <option value="Perfumeria" ${selectedCatVal==='Perfumeria'?'selected':''}>Perfumería</option>
                 <option value="Manualidades" ${selectedCatVal==='Manualidades'?'selected':''}>Manualidades / Decoración</option>
                 <option value="Otro" ${selectedCatVal==='Otro'?'selected':''}>Otro (Escribir categoría...)</option>
               </select>
@@ -1240,7 +1241,7 @@
             <input class="inp text-xs" name="presentacion" placeholder="1. Presentación/Cantidad (Ej: x 6, docena, unidad)" value="${h(g.presentacion || '')}">
             <input class="inp text-xs" name="tipoCalidad" placeholder="2. Tipo/Calidad (Ej: Común, especial, combo)" value="${h(g.tipoCalidad || '')}">
             <input class="inp text-xs" name="variedadSabores" placeholder="3. Variedad/Sabores (Ej: Jamón y queso, dulce de leche)" value="${h(g.variedadSabores || '')}">
-            <input class="inp text-xs" name="pesoPorciones" placeholder="4. Peso/Porciones (Ej: 500g, rinde 2 porciones)" value="${h(g.pesoPorciones || '')}">
+            <input class="inp text-xs" name="pesoPorciones" placeholder="4. Rinde/Peso (Ej: 500g, rinde 2 porciones)" value="${h(g.pesoPorciones || '')}">
             <input class="inp text-xs" name="adicionales" placeholder="5. Adicionales/Extras (Ej: Sin TACC, con papas, sin sal)" value="${h(g.adicionales || '')}">
           </div>`;
       } else if (category === 'Ropa') {
@@ -1249,6 +1250,8 @@
       } else if (category === 'Calzado') {
         const sizes = existingSpecs.sizes || ['37', '38', '39', '40'];
         container.innerHTML = `<label class="block text-xs font-bold mb-1">Talles (Calzado 35-41):</label><div class="flex flex-wrap gap-2">${[35,36,37,38,39,40,41].map(s=>`<label class="text-xs"><input type="checkbox" name="size" value="${s}" ${sizes.includes(String(s))?'checked':''}> ${s}</label>`).join('')}</div>`;
+      } else if (category === 'Perfumeria') {
+        container.innerHTML = `<input class="inp text-sm" name="perfumeSize" placeholder="Tamaño (Ej: 50 ml, 100 ml, de 10 a 100 ml)" value="${h(existingSpecs.perfumeSize || '')}">`;
       } else if (category === 'Manualidades') {
         container.innerHTML = `<input class="inp text-sm" name="measures" placeholder="Medidas (ej: 1 a 20 cm)" value="${h(existingSpecs.measures || '')}">`;
       } else {
@@ -1263,7 +1266,7 @@
       setTimeout(() => {
         const p = DB.getProducts().find(x => x.id === id);
         if (p) {
-          const standardCats = ['Comida', 'Ropa', 'Calzado', 'Manualidades'];
+          const standardCats = ['Comida', 'Ropa', 'Calzado', 'Perfumeria', 'Manualidades'];
           const catVal = standardCats.includes(p.category) ? p.category : 'Otro';
           const select = $('#prodCategorySelect');
           if (select) {
@@ -1282,6 +1285,9 @@
             if ($('input[name="variedadSabores"]')) $('input[name="variedadSabores"]').value = g.variedadSabores || '';
             if ($('input[name="pesoPorciones"]')) $('input[name="pesoPorciones"]').value = g.pesoPorciones || '';
             if ($('input[name="adicionales"]')) $('input[name="adicionales"]').value = g.adicionales || '';
+          }
+          if (p.category === 'Perfumeria' && p.specs && $('input[name="perfumeSize"]')) {
+            $('input[name="perfumeSize"]').value = p.specs.perfumeSize || '';
           }
         }
       }, 50);
@@ -1308,7 +1314,7 @@
         pesoPorciones: f.pesoPorciones || '',
         adicionales: f.adicionales || ''
       };
-      const specs = { sizes, measures: f.measures || '', gastronomy };
+      const specs = { sizes, measures: f.measures || '', perfumeSize: f.perfumeSize || '', gastronomy };
 
       const products = DB.getProducts();
       if (editingProdId) {
@@ -1387,7 +1393,6 @@
       }
     };
 
-    // --- ENRUTADOR PRINCIPAL ---
     window.route = async function() {
       const hash = location.hash || '#/s';
       const [path, arg] = hash.replace(/^#\/?/, '').split('/');
