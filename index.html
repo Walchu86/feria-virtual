@@ -178,7 +178,7 @@
   </div>
 
   <footer class="bg-[#10263a] text-white py-6 text-center text-xs sm:text-sm mt-12 px-4">
-    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
+    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026[cite: 1]</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
     <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
     <div class="mt-2"><a href="#/admin" class="text-[11px] text-slate-400 underline">🔒 Acceso Superadministrador</a></div>
@@ -214,7 +214,7 @@
     const PAYMENT_INFO = {
       alias: 'feria.virtual',
       cvu: '0000076500000039584142',
-      holder: 'Walter Emanuel Canteros',
+      holder: 'Walter Emanuel Canteros',[cite: 1]
       fee: '$10.000 ARS'
     };
     
@@ -930,21 +930,28 @@
               <button class="btn2 text-xs py-1 px-2" onclick="DB.refresh(); route();">🔄 Actualizar Nube</button>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full text-xs sm:text-sm min-w-[600px]">
-                <tr><th class="p-2">Negocio / Credenciales</th><th class="p-2">Rubro</th><th class="p-2">Contacto / WhatsApp</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
-                ${stands.length ? stands.map(s => `
-                  <tr>
-                    <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-600">📧 <b>${h(s.email)}</b></span><br><span class="text-[10px] text-red-600 font-bold">🔑 Clave: ${h(s.password || 'Sin clave')}</span></td>
-                    <td class="p-2">${h(s.rubro)}</td>
-                    <td class="p-2"><a class="text-green-700 font-bold underline block" href="https://wa.me/${s.phone}" target="_blank">📱 ${s.phone}</a></td>
-                    <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
-                    <td class="p-2 space-x-1 whitespace-nowrap">
-                      <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
-                      <button class="bg-amber-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminLoginAsStand(${s.id})">Entrar 🔑</button>
-                      <button class="bg-blue-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminEditStand(${s.id})">Editar ✏️</button>
-                      <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
-                    </td>
-                  </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">No hay stands registrados.</td></tr>'}
+              <table class="w-full text-xs sm:text-sm min-w-[700px]">
+                <tr><th class="p-2">Negocio / Credenciales</th><th class="p-2">Rubro</th><th class="p-2">📦 Productos Cargados</th><th class="p-2">Contacto / WhatsApp</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr>
+                ${stands.length ? stands.map(s => {
+                  const standProds = products.filter(p => String(p.stand_id) === String(s.id));
+                  return `
+                    <tr>
+                      <td class="p-2"><b>${h(s.name)}</b><br><span class="text-[10px] text-slate-600">📧 <b>${h(s.email)}</b></span><br><span class="text-[10px] text-red-600 font-bold">🔑 Clave: ${h(s.password || 'Sin clave')}</span></td>
+                      <td class="p-2">${h(s.rubro)}</td>
+                      <td class="p-2">
+                        <span class="inline-block bg-blue-100 text-blue-800 font-bold px-2.5 py-0.5 rounded-full text-xs">📦 ${standProds.length} productos</span>
+                        ${standProds.length ? `<details class="mt-1 text-[11px] text-slate-600 cursor-pointer"><summary>Ver listado</summary><ul class="list-disc pl-4 mt-1">${standProds.map(p => `<li>${h(p.name)} (${money(p.price)})</li>`).join('')}</ul></details>` : ''}
+                      </td>
+                      <td class="p-2"><a class="text-green-700 font-bold underline block" href="https://wa.me/${s.phone}" target="_blank">📱 ${s.phone}</a></td>
+                      <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
+                      <td class="p-2 space-x-1 whitespace-nowrap">
+                        <button class="${s.active?'btn2':'btn'} !py-1 !px-2 text-xs !w-auto" onclick="toggleStandActive(${s.id})">${s.active?'Ocultar':'Aprobar'}</button>
+                        <button class="bg-amber-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminLoginAsStand(${s.id})">Entrar 🔑</button>
+                        <button class="bg-blue-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="adminEditStand(${s.id})">Editar ✏️</button>
+                        <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded-xl text-xs" onclick="deleteStand(${s.id})">Borrar</button>
+                      </td>
+                    </tr>`;
+                }).join('') : '<tr><td colspan="6" class="text-center py-4">No hay stands registrados.</td></tr>'}
               </table>
             </div>
           </div>`;
@@ -1019,7 +1026,7 @@
                         <p>Comisión 5% a cobrar: <b class="text-[#ff5a36] text-sm">${money(commission)}</b></p>
                         <div>
                           ${isWeekCompleted 
-                            ? `<span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold text-[11px]">🔔 ¡Semana cumplida (${daysPassed} días)! Toca liquidar</span>` 
+                            ? `<span class="inline-block bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold text-[11px]">🔔 ¡Semana cumplida (${daysPassed} days)! Toca liquidar</span>` 
                             : `<span class="inline-block bg-blue-50 text-blue-800 px-2.5 py-0.5 rounded-full font-bold text-[11px]">⏳ Ciclo en curso (Día ${daysPassed} de 7)</span>`}
                         </div>
                       </div>
@@ -1417,7 +1424,7 @@
 
     window.addEventListener('hashchange', window.route);
     window.addEventListener('DOMContentLoaded', () => {
-      if (!location.hash) location.replace('#/');
+      if (!location.hash) location.replace('#/s');
       renderNav();
       window.route();
     });
