@@ -1024,23 +1024,12 @@ Mi WhatsApp: ${f.phone}
               ${stands.length ? stands.map(s => {
                 const data = standSales[s.id] || { totalSales: 0, itemsCount: 0, details: [] };
                 const commission = data.totalSales * 0.05;
-                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:
-
-` +
-                  `📦 Productos vendidos: ${data.itemsCount}
-` +
-                  (data.details.length ? `Detalle:
-` + data.details.join('
-') + `
-
-` : '') +
-                  `💵 Total Vendido: ${money(data.totalSales)}
-` +
-                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*
-
-` +
-                  `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
-
+                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:\n\n` +
+  `📦 Productos vendidos: ${data.itemsCount}\n` +
+  (data.details.length ? `Detalle:\n` + data.details.join('\n') + `\n\n` : '') +
+  `💵 Total Vendido: ${money(data.totalSales)}\n` +
+  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*\n\n` +
+  `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
                 const now = Date.now();
                 const oneDay = 24 * 60 * 60 * 1000;
                 const approvedTime = s.approvedAt || s.created || now;
