@@ -33,10 +33,10 @@
     .product-box:hover img { transform: scale(1.03); }
   </style>
 
-  <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA -->
+  <!-- FIREBASE FIRESTORE INTEGRATION ROBUSTA CON WRITEBATCH -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQgmq6xVihzWN-f0LbzlzZrSecYeEnjs",
@@ -68,9 +68,12 @@
           }
         });
         if (needsMigration) {
-          for (let s of memoryStands) {
-            await setDoc(doc(db, 'stands', String(s.id)), s);
-          }
+          const batch = writeBatch(db);
+          memoryStands.forEach(s => {
+            const ref = doc(db, 'stands', String(s.id));
+            batch.set(ref, s);
+          });
+          await batch.commit();
         }
 
         const prodsSnap = await getDocs(collection(db, 'products'));
@@ -91,8 +94,10 @@
             { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
             { id: 102, stand_id: 2, name: 'Remera Oversize Algodón', category: 'Ropa', price: 12000, discount: 10, image: '', description: 'Excelente calidad.', active: true, specs: { sizes: ['S', 'M', 'L', 'XL'] } }
           ];
-          for (let s of memoryStands) await setDoc(doc(db, 'stands', String(s.id)), s);
-          for (let p of memoryProducts) await setDoc(doc(db, 'products', String(p.id)), p);
+          const initBatch = writeBatch(db);
+          memoryStands.forEach(s => initBatch.set(doc(db, 'stands', String(s.id)), s));
+          memoryProducts.forEach(p => initBatch.set(doc(db, 'products', String(p.id)), p));
+          await initBatch.commit();
         }
       } catch (err) {
         console.error("Error al sincronizar con Firestore:", err);
@@ -106,9 +111,11 @@
       getStands: () => memoryStands,
       saveStands: async (arr) => {
         memoryStands = arr;
-        for (let s of arr) {
-          await setDoc(doc(db, 'stands', String(s.id)), s);
-        }
+        const batch = writeBatch(db);
+        arr.forEach(s => {
+          batch.set(doc(db, 'stands', String(s.id)), s);
+        });
+        await batch.commit();
       },
       removeStand: async (id) => {
         memoryStands = memoryStands.filter(s => s.id !== id);
@@ -117,9 +124,11 @@
       getProducts: () => memoryProducts,
       saveProducts: async (arr) => {
         memoryProducts = arr;
-        for (let p of arr) {
-          await setDoc(doc(db, 'products', String(p.id)), p);
-        }
+        const batch = writeBatch(db);
+        arr.forEach(p => {
+          batch.set(doc(db, 'products', String(p.id)), p);
+        });
+        await batch.commit();
       },
       removeProduct: async (id) => {
         memoryProducts = memoryProducts.filter(p => p.id !== id);
@@ -128,18 +137,21 @@
       getOrders: () => memoryOrders,
       saveOrders: async (arr) => {
         memoryOrders = arr;
-        for (let o of arr) {
-          await setDoc(doc(db, 'orders', String(o.id)), o);
-        }
+        const batch = writeBatch(db);
+        arr.forEach(o => {
+          batch.set(doc(db, 'orders', String(o.id)), o);
+        });
+        await batch.commit();
       },
       getReviews: () => memoryReviews,
       saveReviews: async (arr) => {
         memoryReviews = arr;
-        for (let i = 0; i < arr.length; i++) {
-          let r = arr[i];
+        const batch = writeBatch(db);
+        arr.forEach((r, i) => {
           if (!r.id) r.id = Date.now() + i;
-          await setDoc(doc(db, 'reviews', String(r.id)), r);
-        }
+          batch.set(doc(db, 'reviews', String(r.id)), r);
+        });
+        await batch.commit();
       },
       refresh: fetchCloudData
     };
@@ -178,7 +190,7 @@
   </div>
 
   <footer class="bg-[#10263a] text-white py-6 text-center text-xs sm:text-sm mt-12 px-4">
-    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026[cite: 1]</p>
+    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
     <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
     <div class="mt-2"><a href="#/admin" class="text-[11px] text-slate-400 underline">🔒 Acceso Superadministrador</a></div>
@@ -193,7 +205,7 @@
       return (str || '')
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[̀-ͯ]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
     };
@@ -249,14 +261,7 @@
       getOrders: () => window.CloudDB ? window.CloudDB.getOrders() : [],
       saveOrders: async d => { if(window.CloudDB) await window.CloudDB.saveOrders(d); },
       getReviews: () => window.CloudDB ? window.CloudDB.getReviews() : [],
-      saveReviews: async arr => {
-        memoryReviews = arr;
-        for (let i = 0; i < arr.length; i++) {
-          let r = arr[i];
-          if (!r.id) r.id = Date.now() + i;
-          await setDoc(doc(db, 'reviews', String(r.id)), r);
-        }
-      },
+      saveReviews: async arr => { if(window.CloudDB) await window.CloudDB.saveReviews(arr); },
       refresh: () => { if(window.CloudDB) window.CloudDB.refresh(); }
     };
 
@@ -441,7 +446,9 @@
       if (!stand) {
         return alert("No se encontró ningún stand registrado con ese correo electrónico.");
       }
-      alert("¡Stand encontrado! Tu contraseña actual es: " + stand.password + "\n\nAnotala en un lugar seguro para poder ingresar.");
+      alert("¡Stand encontrado! Tu contraseña actual es: " + stand.password + "
+
+Anotala en un lugar seguro para poder ingresar.");
     };
 
     async function homeView() {
@@ -652,11 +659,18 @@
       Object.keys(byStand).forEach(standId => {
         const st = byStand[standId];
         const standTotal = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:\n` +
-          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('\n') +
-          `\n\nTotal Stand: ${money(standTotal)}` +
-          (f.notes ? `\nNotas: ${f.notes}` : '') +
-          `\nMi WhatsApp: ${f.phone}\n¿Cómo coordinamos pago y entrega?`;
+        const txt = `Hola ${st.name}! Soy ${f.name}. Hice el pedido #${orderId} en la Feria Virtual:
+` +
+          st.items.map(i => `• ${i.qty}x ${i.name} (${money(i.price * i.qty)})`).join('
+') +
+          `
+
+Total Stand: ${money(standTotal)}` +
+          (f.notes ? `
+Notas: ${f.notes}` : '') +
+          `
+Mi WhatsApp: ${f.phone}
+¿Cómo coordinamos pago y entrega?`;
         
         standsHtml += `
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
@@ -848,11 +862,16 @@
         await DB.saveStands(stands);
 
         if (s.active && s.phone) {
-          const welcomeMsg = `¡Hola ${s.name}! 👋\n` +
-            `Te recordamos cómo funciona la gestión de tu puesto en feriavirtual.shop:\n` +
-            `- 🏪 Tu puesto activo 24/7: Tus productos siguen publicados y visibles todo el tiempo.\n` +
-            `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.\n` +
-            `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.\n` +
+          const welcomeMsg = `¡Hola ${s.name}! 👋
+` +
+            `Te recordamos cómo funciona la gestión de tu puesto en feriavirtual.shop:
+` +
+            `- 🏪 Tu puesto activo 24/7: Tus productos siguen publicados y visibles todo el tiempo.
+` +
+            `- 📊 Comisión del 5%: Se calcula sobre el total vendido en la semana. Este pequeño porcentaje se destina al mantenimiento de la plataforma web, servidores y costos operativos para que tu negocio siga funcionando al 100%.
+` +
+            `- 💳 Liquidación: Cada semana te llegará un mensaje a tu WhatsApp con el resumen y el monto exacto a transferir.
+` +
             `¡Gracias por sumarte y hacer crecer tu emprendimiento con nosotros! 🚀🧉`;
           window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
         }
@@ -899,9 +918,11 @@
 
     window.exportCSV = () => {
       const orders = DB.getOrders();
-      let csv = 'ID Pedido,Comprador,WhatsApp,Total,Estado\n';
+      let csv = 'ID Pedido,Comprador,WhatsApp,Total,Estado
+';
       orders.forEach(o => {
-        csv += `${o.id},"${o.buyer.name}","${o.buyer.phone}",${o.total},${o.delivered?'Entregado':'Pendiente'}\n`;
+        csv += `${o.id},"${o.buyer.name}","${o.buyer.phone}",${o.total},${o.delivered?'Entregado':'Pendiente'}
+`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -1003,11 +1024,21 @@
               ${stands.length ? stands.map(s => {
                 const data = standSales[s.id] || { totalSales: 0, itemsCount: 0, details: [] };
                 const commission = data.totalSales * 0.05;
-                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:\n\n` +
-                  `📦 Productos vendidos: ${data.itemsCount}\n` +
-                  (data.details.length ? `Detalle:\n` + data.details.join('\n') + `\n\n` : '') +
-                  `💵 Total Vendido: ${money(data.totalSales)}\n` +
-                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*\n\n` +
+                const waText = `Hola ${s.name}! Te escribo de la administración de la Feria Virtual para realizar la liquidación de ventas semanales:
+
+` +
+                  `📦 Productos vendidos: ${data.itemsCount}
+` +
+                  (data.details.length ? `Detalle:
+` + data.details.join('
+') + `
+
+` : '') +
+                  `💵 Total Vendido: ${money(data.totalSales)}
+` +
+                  `🏷️ Tu comisión (5%) a depositar a ${PAYMENT_INFO.holder} (Alias: ${PAYMENT_INFO.alias}): *${money(commission)}*
+
+` +
                   `Por favor, enviame el comprobante de la transferencia cuando realices el depósito. ¡Muchas gracias!`;
 
                 const now = Date.now();
