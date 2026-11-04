@@ -581,16 +581,14 @@
       const stands = DB.getStands();
       const products = DB.getProducts();
       const orders = DB.getOrders();
-      const totalVentas = orders.reduce((acc, o) => acc + o.total, 0);
-      const totalComisiones = totalVentas * 0.05;
 
       let content = '';
       if (adminTab === 'stands') {
         content = `
           <div class="card overflow-x-auto text-left">
             <h3 class="disp text-lg font-bold mb-3">🏪 Gestión de Stands (${stands.length})</h3>
-            <table class="w-full text-xs sm:text-sm min-w-[700px]">
-              <tr><th>Negocio</th><th>Rubro</th><th>Productos</th><th>Ciclo 7 Días</th><th>Estado</th><th>Acciones</th></tr>
+            <table class="w-full text-xs sm:text-sm min-w-[750px]">
+              <tr><th>Negocio / Contraseña</th><th>Rubro</th><th>Productos</th><th>Ciclo 7 Días</th><th>Estado</th><th>Acciones</th></tr>
               ${stands.map(s => {
                 const sp = products.filter(p => String(p.stand_id) === String(s.id));
                 const approvedTime = s.approvedAt || s.created || Date.now();
@@ -598,7 +596,7 @@
                 const daysLeft = Math.max(0, 7 - daysElapsed);
                 return `
                   <tr>
-                    <td><b>${h(s.name)}</b></td>
+                    <td><b>${h(s.name)}</b><br><span class="text-[10px] text-red-600 font-bold">🔑 ${h(s.password)}</span></td>
                     <td>${h(s.rubro)}</td>
                     <td>${sp.length}</td>
                     <td><span class="font-bold text-amber-600">${daysLeft} días restantes</span><br><button class="text-[10px] underline text-blue-600" onclick="resetStandCycle(${s.id})">Reiniciar ciclo</button></td>
@@ -622,18 +620,48 @@
                   <td>#${o.id}</td>
                   <td>${new Date(o.date).toLocaleString('es-AR')}</td>
                   <td><b>${h(o.buyer?.name || 'Cliente')}</b></td>
-                  <td>${(o.cart || []).map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
+                  <td>${(o.cart || []).map(i => `${i.qty}x ${i.name} (${i.standName})`).join(', ')}</td>
                   <td><b>${money(o.total)}</b></td>
                 </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">Sin ventas registradas.</td></tr>'}
             </table>
           </div>`;
       } else if (adminTab === 'liquidation') {
+        // Calcular comisiones y ventas por cada stand individualmente
+        const standLiquidations = stands.map(s => {
+          const sProducts = products.filter(p => String(p.stand_id) === String(s.id));
+          const sProdIds = sProducts.map(p => p.id);
+          
+          let standTotalSales = 0;
+          orders.forEach(o => {
+            (o.cart || []).forEach(item => {
+              if (String(item.standId) === String(s.id)) {
+                standTotalSales += (item.price * item.qty);
+              }
+            });
+          });
+          const commission = standTotalSales * 0.05;
+          return { name: s.name, phone: s.phone, sales: standTotalSales, commission };
+        });
+
         content = `
-          <div class="card text-left space-y-3">
-            <h3 class="disp text-lg font-bold">💰 Liquidación y Cobros (Comisión 5%)</h3>
-            <p class="text-sm text-slate-600">Total de ventas registradas en la feria: <b>${money(totalVentas)}</b></p>
-            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
-              <p class="text-sm text-amber-900"><b>Total a cobrar en comisiones (5%):</b> <span class="text-xl font-extrabold text-[#ff5a36]">${money(totalComisiones)}</span></p>
+          <div class="card text-left space-y-4">
+            <h3 class="disp text-lg font-bold">💰 Cobros y Comisión por Feriante (5%)</h3>
+            <p class="text-xs text-slate-600">Aquí podés ver detalladamente cuánto le corresponde abonar a cada stand según sus ventas registradas:</p>
+            <div class="space-y-3">
+              ${standLiquidations.map(sl => `
+                <div class="bg-slate-50 p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div>
+                    <b class="text-base block">${h(sl.name)}</b>
+                    <span class="text-xs text-slate-500">Ventas totales: ${money(sl.sales)}</span>
+                  </div>
+                  <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <div class="text-right">
+                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Comisión a cobrar (5%)</span>
+                      <span class="disp text-lg font-extrabold text-[#ff5a36]">${money(sl.commission)}</span>
+                    </div>
+                    ${sl.phone ? `<a href="https://wa.me/${sl.phone}?text=${encodeURIComponent('Hola ' + sl.name + '! Te escribo de la Feria Virtual para coordinar el cobro de tu comisión semanal de ' + money(sl.commission))}" target="_blank" class="btnwa text-xs !py-1.5 !px-3 shrink-0">💬 Cobrar WhatsApp</a>` : ''}
+                  </div>
+                </div>`).join('')}
             </div>
           </div>`;
       }
@@ -641,9 +669,9 @@
       return `
         <div class="flex justify-between items-center mb-4"><h1 class="disp text-2xl font-extrabold">🔒 Panel Superadmin</h1><button class="btn2 text-xs py-1 px-3" onclick="adminLogged=false;localStorage.removeItem('fv_admin_logged');route();">Cerrar</button></div>
         <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
-          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='stands'; route();">🏪 Stands & Ciclos</button>
+          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='stands'; route();">🏪 Stands & Contraseñas</button>
           <button class="${adminTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='orders'; route();">🧾 Registro de Ventas</button>
-          <button class="${adminTab==='liquidation'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='liquidation'; route();">💰 Cobros & Comisión (5%)</button>
+          <button class="${adminTab==='liquidation'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='liquidation'; route();">💰 Cobro Individual (5%)</button>
         </div>
         ${content}`;
     }
