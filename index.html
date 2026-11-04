@@ -84,21 +84,6 @@
 
         const reviewsSnap = await getDocs(collection(db, 'reviews'));
         memoryReviews = reviewsSnap.docs.map(d => d.data());
-
-        if (!memoryStands.length) {
-          memoryStands = [
-            { id: 1, slug: 'panaderia-dona-rosa', name: 'Panadería Doña Rosa', rubro: 'Comida', description: 'Alfajores artesanales, rosquitas y pan casero recién horneado.', color: '#ff5a36', phone: '5493794000001', email: 'rosa@feria.shop', active: true, logo: '', created: Date.now() },
-            { id: 2, slug: 'estilo-urbano', name: 'Estilo Urbano', rubro: 'Ropa', description: 'Indumentaria urbana y remeras con diseños exclusivos.', color: '#3b82f6', phone: '5493794000002', email: 'urbano@feria.shop', active: true, logo: '', created: Date.now() }
-          ];
-          memoryProducts = [
-            { id: 101, stand_id: 1, name: 'Alfajores de Maicena x6', category: 'Comida', price: 4500, discount: 0, image: '', description: 'Rellenos con dulce de leche casero.', active: true, specs: {} },
-            { id: 102, stand_id: 2, name: 'Remera Oversize Algodón', category: 'Ropa', price: 12000, discount: 10, image: '', description: 'Excelente calidad.', active: true, specs: { sizes: ['S', 'M', 'L', 'XL'] } }
-          ];
-          const initBatch = writeBatch(db);
-          memoryStands.forEach(s => initBatch.set(doc(db, 'stands', String(s.id)), s));
-          memoryProducts.forEach(p => initBatch.set(doc(db, 'products', String(p.id)), p));
-          await initBatch.commit();
-        }
       } catch (err) {
         console.error("Error al sincronizar con Firestore:", err);
       }
