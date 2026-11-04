@@ -153,9 +153,9 @@
     </div>
   </div>
 
-  <!-- Modal Zoom -->
+  <!-- Modal Zoom & Ficha Completa con Compra -->
   <div id="zoomModal" class="fixed inset-0 z-50 bg-black/85 hidden flex items-center justify-center p-4" onclick="closeZoom()">
-    <div class="bg-white rounded-3xl p-5 max-w-lg w-full relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl p-5 max-w-md w-full relative overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <button type="button" class="absolute top-3 right-3 bg-[#10263a] text-white rounded-full w-10 h-10 font-bold flex items-center justify-center text-lg shadow-lg z-20 hover:bg-[#ff5a36] transition-colors" onclick="closeZoom()">✕</button>
       <div id="zoomContent" class="text-center pt-2"></div>
     </div>
@@ -305,14 +305,26 @@
       toggleCart(true);
     };
 
-    window.openZoom = (imgUrl, name, desc) => {
+    window.openZoom = (productId, imgUrl, name, desc, price, standId, standName, isAgotado, specs) => {
       const optImg = optimizeCloudinaryUrl(imgUrl);
+      let specsHtml = '';
+      if (specs?.sizes) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Talles:</b> ${specs.sizes.join(', ')}</p>`;
+      if (specs?.calzados) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Calce (Zapatillas):</b> ${specs.calzados.join(', ')}</p>`;
+      if (specs?.liquidosMl) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Volumen:</b> ${specs.liquidosMl}</p>`;
+      if (specs?.gastronomy?.presentacion) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Presentación:</b> ${specs.gastronomy.presentacion}</p>`;
+      if (specs?.measures) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Medidas:</b> ${specs.measures}</p>`;
+
       $('#zoomContent').innerHTML = `
-        <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-56" onclick="this.classList.toggle('zoomed')">
-          ${optImg ? `<img src="${h(optImg)}" loading="lazy" class="w-full h-full object-contain">` : '<span class="text-6xl">📦</span>'}
+        <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-48" onclick="this.classList.toggle('zoomed')">
+          ${optImg ? `<img src="${h(optImg)}" loading="lazy" class="w-full h-full object-contain">` : '<span class="text-5xl">📦</span>'}
         </div>
         <h3 class="disp text-lg font-bold">${h(name)}</h3>
-        <p class="text-sm text-slate-600 mt-1">${h(desc || 'Sin descripción.')}</p>`;
+        <p class="text-xs text-slate-600 mt-1">${h(desc || 'Sin descripción.')}</p>
+        ${specsHtml}
+        <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+          <span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(price)}</span>
+          <button class="btn text-xs !py-2.5 !w-auto px-5 ${isAgotado ? 'opacity-50 cursor-not-allowed' : ''}" ${isAgotado ? 'disabled' : ''} onclick="closeZoom(); addToCart(${productId}, ${standId}, '${h(standName)}', '${h(name)}', ${price})">${isAgotado ? 'Agotado' : 'Agregar al Carrito 🛒'}</button>
+        </div>`;
       $('#zoomModal').classList.remove('hidden');
     };
     window.closeZoom = () => $('#zoomModal').classList.add('hidden');
@@ -406,17 +418,19 @@
           ${products.length ? products.map(p => {
             const finalP = finalPrice(p);
             const isAgotado = p.agotado || false;
+            const specsJson = encodeURIComponent(JSON.stringify(p.specs || {}));
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md relative">
                 ${isAgotado ? '<div class="absolute inset-0 bg-white/80 z-10 flex items-center justify-center"><span class="bg-red-600 text-white font-bold px-3 py-1 rounded-full text-xs">AGOTADO</span></div>' : ''}
-                <div class="product-box cursor-pointer" onclick="openZoom('${h(p.image)}', '${h(p.name)}', '${h(p.description)}')">
+                <div class="product-box cursor-pointer" onclick="openZoom(${p.id}, '${h(p.image)}', '${h(p.name)}', '${h(p.description)}', ${finalP}, ${stand.id}, '${h(stand.name)}', ${isAgotado}, JSON.parse(decodeURIComponent('${specsJson}')))">
                   ${p.image ? `<img src="${h(optimizeCloudinaryUrl(p.image))}" loading="lazy" class="w-full h-full object-cover">` : '<div class="text-3xl">📦</div>'}
                 </div>
                 <div class="p-3 flex-1 flex flex-col">
                   <span class="text-[10px] text-slate-500 uppercase font-bold">${h(p.category)}</span>
                   <b class="text-sm leading-tight my-1 line-clamp-2">${h(p.name)}</b>
                   ${p.specs?.sizes ? `<p class="text-[11px] text-slate-600 mb-1"><b>Talles:</b> ${p.specs.sizes.join(', ')}</p>` : ''}
-                  ${p.specs?.measures ? `<p class="text-[11px] text-slate-600 mb-1"><b>Medidas:</b> ${p.specs.measures}</p>` : ''}
+                  ${p.specs?.calzados ? `<p class="text-[11px] text-slate-600 mb-1"><b>Calce:</b> ${p.specs.calzados.join(', ')}</p>` : ''}
+                  ${p.specs?.liquidosMl ? `<p class="text-[11px] text-slate-600 mb-1"><b>Volumen:</b> ${p.specs.liquidosMl}</p>` : ''}
                   ${p.specs?.gastronomy?.presentacion ? `<p class="text-[11px] text-slate-600 mb-1"><b>Presentación:</b> ${p.specs.gastronomy.presentacion}</p>` : ''}
                   <div class="mt-auto pt-2">
                     <b class="disp text-lg text-[#ff5a36]">${money(finalP)}</b>
@@ -527,14 +541,19 @@
           <h1 class="disp text-xl font-extrabold text-center">${isReg ? 'Crear Stand' : 'Ingresar como Vendedor'}</h1>
           ${isReg ? `
             <input class="inp text-sm" name="name" placeholder="Nombre de tu Emprendimiento" required>
-            <select class="inp text-sm" name="rubro" required>
-              <option value="">Rubro...</option>
+            <select class="inp text-sm" name="rubroSelect" id="rubroSelect" required onchange="handleRubroChange(this.value)">
+              <option value="">Seleccioná tu Rubro...</option>
               <option value="Comida">Comida</option>
               <option value="Ropa">Ropa</option>
               <option value="Calzado">Calzado</option>
               <option value="Perfumeria">Perfumería</option>
               <option value="Manualidades">Manualidades</option>
+              <option value="Accesorios">Accesorios</option>
+              <option value="Otro">Otro (Escribir rubro...)</option>
             </select>
+            <div id="customRubroContainer" class="hidden">
+              <input class="inp text-sm" name="customRubro" id="customRubroInput" placeholder="Escribí tu rubro">
+            </div>
             <input class="inp text-sm" name="phone" type="tel" placeholder="WhatsApp (ej: 379...)" required>
             <textarea class="inp text-sm" name="description" rows="2" placeholder="Descripción..."></textarea>
             <label class="block text-xs font-bold">Logo: <input type="file" id="logoFile" accept="image/*" class="inp mt-1 text-xs bg-white"></label>` : ''}
@@ -545,6 +564,14 @@
         </form>`;
     }
 
+    window.handleRubroChange = val => {
+      const container = $('#customRubroContainer');
+      const input = $('#customRubroInput');
+      if (!container || !input) return;
+      if (val === 'Otro') { container.classList.remove('hidden'); input.required = true; }
+      else { container.classList.add('hidden'); input.required = false; input.value = ''; }
+    };
+
     window.handleAuth = async (e, isReg) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
@@ -554,7 +581,8 @@
         try {
           const logoInput = $('#logoFile');
           let logoUrl = logoInput?.files[0] ? await uploadToCloudinary(logoInput.files[0]) : '';
-          const newStand = { id: Date.now(), name: f.name, rubro: f.rubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now(), approvedAt: Date.now() };
+          const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
+          const newStand = { id: Date.now(), name: f.name, rubro: finalRubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now(), approvedAt: Date.now() };
           await DB.saveStand(newStand);
           window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand ' + f.name)}`, '_blank');
           app.innerHTML = `<div class="card max-w-lg mx-auto text-center py-10"><h1 class="text-2xl font-bold">¡Stand Creado!</h1><p class="text-sm my-2">Pendiente de aprobación.</p><button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver</button></div>`;
@@ -626,11 +654,7 @@
             </table>
           </div>`;
       } else if (adminTab === 'liquidation') {
-        // Calcular comisiones y ventas por cada stand individualmente
         const standLiquidations = stands.map(s => {
-          const sProducts = products.filter(p => String(p.stand_id) === String(s.id));
-          const sProdIds = sProducts.map(p => p.id);
-          
           let standTotalSales = 0;
           orders.forEach(o => {
             (o.cart || []).forEach(item => {
@@ -646,7 +670,6 @@
         content = `
           <div class="card text-left space-y-4">
             <h3 class="disp text-lg font-bold">💰 Cobros y Comisión por Feriante (5%)</h3>
-            <p class="text-xs text-slate-600">Aquí podés ver detalladamente cuánto le corresponde abonar a cada stand según sus ventas registradas:</p>
             <div class="space-y-3">
               ${standLiquidations.map(sl => `
                 <div class="bg-slate-50 p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -656,10 +679,10 @@
                   </div>
                   <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                     <div class="text-right">
-                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Comisión a cobrar (5%)</span>
+                      <span class="text-[10px] uppercase font-bold text-slate-400 block">Comisión (5%)</span>
                       <span class="disp text-lg font-extrabold text-[#ff5a36]">${money(sl.commission)}</span>
                     </div>
-                    ${sl.phone ? `<a href="https://wa.me/${sl.phone}?text=${encodeURIComponent('Hola ' + sl.name + '! Te escribo de la Feria Virtual para coordinar el cobro de tu comisión semanal de ' + money(sl.commission))}" target="_blank" class="btnwa text-xs !py-1.5 !px-3 shrink-0">💬 Cobrar WhatsApp</a>` : ''}
+                    ${sl.phone ? `<a href="https://wa.me/${sl.phone}?text=${encodeURIComponent('Hola ' + sl.name + '! Te escribo de la Feria Virtual para coordinar el cobro de tu comisión semanal de ' + money(sl.commission))}" target="_blank" class="btnwa text-xs !py-1.5 !px-3 shrink-0">💬 WhatsApp</a>` : ''}
                   </div>
                 </div>`).join('')}
             </div>
@@ -695,9 +718,9 @@
     };
 
     window.resetStandCycle = async id => {
-      if (!confirm('¿Reiniciar ciclo de 7 días para este stand?')) return;
+      if (!confirm('¿Reiniciar ciclo de 7 días?')) return;
       const s = DB.getStands().find(x => x.id === id);
-      if (s) { s.approvedAt = Date.now(); await DB.saveStand(s); toast('Ciclo de 7 días reiniciado 🔄'); route(); }
+      if (s) { s.approvedAt = Date.now(); await DB.saveStand(s); toast('Ciclo reiniciado 🔄'); route(); }
     };
 
     let editingProdId = null;
@@ -709,18 +732,33 @@
       if (!stand.active) return `<div class="card text-center py-10"><h1 class="text-2xl font-bold">Stand Pendiente de Activación</h1><button class="btn max-w-xs mx-auto mt-4" onclick="logout()">Salir</button></div>`;
 
       const editingP = products.find(p => p.id === editingProdId) || {};
+      const standardCats = ['Comida', 'Ropa', 'Calzado', 'Perfumeria', 'Manualidades'];
+      const isCustomCat = editingP.category && !standardCats.includes(editingP.category);
+      const selectedCatVal = isCustomCat ? 'Otro' : (editingP.category || '');
 
       return `
         <div class="flex justify-between items-center mb-6"><h1 class="disp text-2xl font-extrabold">⛺ ${h(stand.name)}</h1></div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <form class="card space-y-3 md:col-span-1 h-fit text-left" onsubmit="saveVendorProduct(event)">
-            <h3 class="disp text-lg font-bold">${editingP.id ? '✏️ Editar' : '➕ Nuevo Producto'}</h3>
+            <h3 class="disp text-lg font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
             <input class="inp text-sm" name="name" placeholder="Nombre" value="${h(editingP.name || '')}" required>
-            <select class="inp text-sm" name="category" required onchange="renderDynamicSpecs(this.value)">
+            
+            <select class="inp text-sm" name="categorySelect" required onchange="handleProdCategoryChange(this.value)">
               <option value="">Categoría...</option>
-              ${['Comida','Ropa','Calzado','Perfumeria','Manualidades'].map(c=>`<option value="${c}" ${editingP.category===c?'selected':''}>${c}</option>`).join('')}
+              <option value="Comida" ${selectedCatVal==='Comida'?'selected':''}>Comida</option>
+              <option value="Ropa" ${selectedCatVal==='Ropa'?'selected':''}>Ropa</option>
+              <option value="Calzado" ${selectedCatVal==='Calzado'?'selected':''}>Calzado</option>
+              <option value="Perfumeria" ${selectedCatVal==='Perfumeria'?'selected':''}>Perfumería (Líquidos en ML)</option>
+              <option value="Manualidades" ${selectedCatVal==='Manualidades'?'selected':''}>Manualidades</option>
+              <option value="Otro" ${selectedCatVal==='Otro'?'selected':''}>Otro (Escribir categoría...)</option>
             </select>
+            
+            <div id="customProdCatContainer" class="${isCustomCat ? '' : 'hidden'}">
+              <input class="inp text-sm" name="customCategory" id="customProdCatInput" placeholder="Escribí tu categoría" value="${h(isCustomCat ? editingP.category : '')}">
+            </div>
+
             <div id="dynamicSpecsContainer"></div>
+
             <input class="inp text-sm" name="price" type="text" placeholder="Precio ($)" value="${editingP.price || ''}" required oninput="previewPrice(this.value)">
             <p id="pricePreview" class="text-xs text-slate-500 font-bold"></p>
             <input class="inp text-sm" name="discount" type="number" placeholder="% Descuento" value="${editingP.discount || ''}" min="0" max="95">
@@ -759,15 +797,29 @@
       if (prev) prev.textContent = p > 0 ? `Se publicará a: ${money(p)}` : '';
     };
 
+    window.handleProdCategoryChange = val => {
+      const container = $('#customProdCatContainer');
+      const input = $('#customProdCatInput');
+      if (container && input) {
+        if (val === 'Otro') { container.classList.remove('hidden'); input.required = true; }
+        else { container.classList.add('hidden'); input.required = false; input.value = ''; }
+      }
+      renderDynamicSpecs(val, {});
+    };
+
     window.renderDynamicSpecs = (category, specs = {}) => {
       const c = $('#dynamicSpecsContainer');
       if (!c) return;
       if (category === 'Comida') {
-        c.innerHTML = `<input class="inp text-xs" name="presentacion" placeholder="Presentación (ej: x 6)" value="${h(specs.gastronomy?.presentacion || '')}">`;
-      } else if (category === 'Ropa' || category === 'Calzado') {
-        c.innerHTML = `<input class="inp text-xs" name="sizes" placeholder="Talles (ej: S, M, L o 37, 38)" value="${h(specs.sizes ? specs.sizes.join(', ') : '')}">`;
+        c.innerHTML = `<input class="inp text-xs" name="presentacion" placeholder="Presentación (ej: x 6, porción)" value="${h(specs.gastronomy?.presentacion || '')}">`;
+      } else if (category === 'Ropa') {
+        c.innerHTML = `<input class="inp text-xs" name="sizes" placeholder="Talles de ropa (ej: S, M, L, XL)" value="${h(specs.sizes ? specs.sizes.join(', ') : '')}">`;
+      } else if (category === 'Calzado') {
+        c.innerHTML = `<input class="inp text-xs" name="calzados" placeholder="Calces de zapatilla (ej: 36, 37, 38, 39)" value="${h(specs.calzados ? specs.calzados.join(', ') : '')}">`;
+      } else if (category === 'Perfumeria') {
+        c.innerHTML = `<input class="inp text-xs" name="liquidosMl" placeholder="Volumen / Líquido en ML (ej: 50 ml, 100 ml)" value="${h(specs.liquidosMl || '')}">`;
       } else {
-        c.innerHTML = `<input class="inp text-xs" name="measures" placeholder="Medidas (ej: 10x20 cm)" value="${h(specs.measures || '')}">`;
+        c.innerHTML = `<input class="inp text-xs" name="measures" placeholder="Medidas / Especificación (ej: 10x20 cm)" value="${h(specs.measures || '')}">`;
       }
     };
 
@@ -777,8 +829,18 @@
       setTimeout(() => {
         const p = DB.getProducts().find(x => x.id === id);
         if (p) {
-          const sel = $('select[name="category"]');
-          if (sel) { sel.value = p.category; renderDynamicSpecs(p.category, p.specs || {}); }
+          const standardCats = ['Comida', 'Ropa', 'Calzado', 'Perfumeria', 'Manualidades'];
+          const isCustom = !standardCats.includes(p.category);
+          const sel = $('select[name="categorySelect"]');
+          if (sel) {
+            sel.value = isCustom ? 'Otro' : p.category;
+            handleProdCategoryChange(sel.value);
+            if (isCustom) {
+              const customInput = $('#customProdCatInput');
+              if (customInput) customInput.value = p.category;
+            }
+          }
+          renderDynamicSpecs(p.category, p.specs || {});
           previewPrice(String(p.price));
         }
       }, 50);
@@ -797,16 +859,19 @@
           imgUrl = await uploadToCloudinary(fileInput.files[0]);
         }
 
+        const finalCategory = f.categorySelect === 'Otro' ? (f.customCategory || 'General') : f.categorySelect;
         const specs = {};
         if (f.presentacion) specs.gastronomy = { presentacion: f.presentacion };
         if (f.sizes) specs.sizes = f.sizes.split(',').map(s => s.trim());
+        if (f.calzados) specs.calzados = f.calzados.split(',').map(s => s.trim());
+        if (f.liquidosMl) specs.liquidosMl = f.liquidosMl;
         if (f.measures) specs.measures = f.measures;
 
         const prod = {
           id: editingProdId || Date.now(),
           stand_id: currentVendor.id,
           name: f.name,
-          category: f.category,
+          category: finalCategory,
           price: parsePrice(f.price),
           discount: Number(f.discount || 0),
           agotado: f.agotado === 'on',
