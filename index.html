@@ -16,7 +16,7 @@
     .btn:hover { background: #e84823; }
     .btn:disabled { opacity: .6; cursor: wait; }
     .btn2 { background: #10263a; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 14px; display: inline-block; text-align: center; cursor: pointer; border: none; }
-    .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; width: 100%; }
+    .btnwa { background: #1faa59; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 18px; display: inline-block; text-align: center; cursor: pointer; text-decoration: none; width: auto; }
     .card { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(16,38,58,.06); width: 100%; box-sizing: border-box; }
     .stand-card { background: #fff; border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); border: 2px solid #e4f0f1; transition: all .2s; text-decoration: none; color: #10263a; }
     .stand-card:hover { border-color: #ff5a36; transform: translateY(-2px); }
@@ -390,15 +390,15 @@
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
 
       return `
-        <div class="rounded-3xl p-5 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
+        <div class="rounded-3xl p-5 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
           ${stand.logo ? `<div class="w-20 h-20 rounded-2xl bg-white overflow-hidden shadow shrink-0"><img src="${h(optimizeCloudinaryUrl(stand.logo))}" class="w-full h-full object-cover"></div>` : ''}
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0 w-full">
             <button class="underline text-xs mb-2 font-bold block mx-auto sm:mx-0" onclick="navigate('#/')">← Volver</button>
             <h1 class="text-2xl sm:text-3xl font-extrabold">${h(stand.name)} <span class="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full uppercase">${h(stand.rubro)}</span></h1>
             <p class="opacity-90 text-xs sm:text-sm mt-1">${h(stand.description || '')}</p>
             <p class="text-xs mt-2">⭐ Reputación: <b>${avgRating}</b> (${reviews.length} opiniones)</p>
           </div>
-          ${stand.phone ? `<a class="btnwa text-sm py-2 px-4 shrink-0" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual.')}" target="_blank">💬 WhatsApp</a>` : ''}
+          ${stand.phone ? `<div class="w-full sm:w-auto mt-2 sm:mt-0"><a class="btnwa text-sm py-2 px-4 inline-block" href="https://wa.me/${stand.phone}?text=${encodeURIComponent('Hola ' + stand.name + '! Vengo de la Feria Virtual.')}" target="_blank">💬 WhatsApp</a></div>` : ''}
         </div>
 
         <h2 class="text-xl font-extrabold mb-4">Productos</h2>
@@ -554,7 +554,7 @@
         try {
           const logoInput = $('#logoFile');
           let logoUrl = logoInput?.files[0] ? await uploadToCloudinary(logoInput.files[0]) : '';
-          const newStand = { id: Date.now(), name: f.name, rubro: f.rubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now() };
+          const newStand = { id: Date.now(), name: f.name, rubro: f.rubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now(), approvedAt: Date.now() };
           await DB.saveStand(newStand);
           window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand ' + f.name)}`, '_blank');
           app.innerHTML = `<div class="card max-w-lg mx-auto text-center py-10"><h1 class="text-2xl font-bold">¡Stand Creado!</h1><p class="text-sm my-2">Pendiente de aprobación.</p><button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver</button></div>`;
@@ -574,23 +574,78 @@
     window.logout = () => { currentVendor = null; localStorage.removeItem('fv_session'); renderNav(); navigate('#/'); };
 
     let adminLogged = localStorage.getItem('fv_admin_logged') === 'true';
+    let adminTab = 'stands';
 
     function adminDashboardView() {
       if (!adminLogged) return `<form class="card max-w-md mx-auto space-y-4 shadow-xl mt-6" onsubmit="handleAdminLogin(event)"><h1 class="disp text-xl font-bold text-center">🔒 Superadministrador</h1><input class="inp text-sm" name="user" placeholder="Usuario" required><input class="inp text-sm" name="pass" type="password" placeholder="Contraseña" required><button class="btn">Ingresar</button></form>`;
       const stands = DB.getStands();
       const products = DB.getProducts();
+      const orders = DB.getOrders();
+      const totalVentas = orders.reduce((acc, o) => acc + o.total, 0);
+      const totalComisiones = totalVentas * 0.05;
+
+      let content = '';
+      if (adminTab === 'stands') {
+        content = `
+          <div class="card overflow-x-auto text-left">
+            <h3 class="disp text-lg font-bold mb-3">🏪 Gestión de Stands (${stands.length})</h3>
+            <table class="w-full text-xs sm:text-sm min-w-[700px]">
+              <tr><th>Negocio</th><th>Rubro</th><th>Productos</th><th>Ciclo 7 Días</th><th>Estado</th><th>Acciones</th></tr>
+              ${stands.map(s => {
+                const sp = products.filter(p => String(p.stand_id) === String(s.id));
+                const approvedTime = s.approvedAt || s.created || Date.now();
+                const daysElapsed = Math.floor((Date.now() - approvedTime) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.max(0, 7 - daysElapsed);
+                return `
+                  <tr>
+                    <td><b>${h(s.name)}</b></td>
+                    <td>${h(s.rubro)}</td>
+                    <td>${sp.length}</td>
+                    <td><span class="font-bold text-amber-600">${daysLeft} días restantes</span><br><button class="text-[10px] underline text-blue-600" onclick="resetStandCycle(${s.id})">Reiniciar ciclo</button></td>
+                    <td><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.active?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}">${s.active?'Activo':'Pendiente'}</span></td>
+                    <td class="space-x-1 whitespace-nowrap">
+                      <button class="btn2 !py-1 !px-2 text-xs" onclick="toggleStandActive(${s.id})">${s.active?'Pausar':'Aprobar'}</button>
+                      <button class="bg-amber-600 text-white font-bold !py-1 !px-2 rounded text-xs" onclick="adminLoginAsStand(${s.id})">Entrar</button>
+                    </td>
+                  </tr>`;
+              }).join('')}
+            </table>
+          </div>`;
+      } else if (adminTab === 'orders') {
+        content = `
+          <div class="card overflow-x-auto text-left">
+            <h3 class="disp text-lg font-bold mb-3">🧾 Registro de Ventas (${orders.length})</h3>
+            <table class="w-full text-xs sm:text-sm min-w-[600px]">
+              <tr><th>N°</th><th>Fecha</th><th>Comprador</th><th>Detalle</th><th>Total</th></tr>
+              ${orders.length ? orders.map(o => `
+                <tr>
+                  <td>#${o.id}</td>
+                  <td>${new Date(o.date).toLocaleString('es-AR')}</td>
+                  <td><b>${h(o.buyer?.name || 'Cliente')}</b></td>
+                  <td>${(o.cart || []).map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
+                  <td><b>${money(o.total)}</b></td>
+                </tr>`).join('') : '<tr><td colspan="5" class="text-center py-4">Sin ventas registradas.</td></tr>'}
+            </table>
+          </div>`;
+      } else if (adminTab === 'liquidation') {
+        content = `
+          <div class="card text-left space-y-3">
+            <h3 class="disp text-lg font-bold">💰 Liquidación y Cobros (Comisión 5%)</h3>
+            <p class="text-sm text-slate-600">Total de ventas registradas en la feria: <b>${money(totalVentas)}</b></p>
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+              <p class="text-sm text-amber-900"><b>Total a cobrar en comisiones (5%):</b> <span class="text-xl font-extrabold text-[#ff5a36]">${money(totalComisiones)}</span></p>
+            </div>
+          </div>`;
+      }
+
       return `
-        <div class="flex justify-between items-center mb-4"><h1 class="disp text-2xl font-extrabold">🔒 Superadmin</h1><button class="btn2 text-xs py-1 px-3" onclick="adminLogged=false;localStorage.removeItem('fv_admin_logged');route();">Cerrar</button></div>
-        <div class="card overflow-x-auto text-left">
-          <h3 class="disp text-lg font-bold mb-3">Stands (${stands.length})</h3>
-          <table class="w-full text-xs sm:text-sm min-w-[600px]">
-            <tr><th>Negocio</th><th>Rubro</th><th>Productos</th><th>Estado</th><th>Acciones</th></tr>
-            ${stands.map(s => {
-              const sp = products.filter(p => String(p.stand_id) === String(s.id));
-              return `<tr><td><b>${h(s.name)}</b></td><td>${h(s.rubro)}</td><td>${sp.length}</td><td>${s.active?'Activo':'Pendiente'}</td><td><button class="btn2 !py-1 !px-2 text-xs" onclick="toggleStandActive(${s.id})">${s.active?'Pausar':'Aprobar'}</button> <button class="bg-amber-600 text-white !py-1 !px-2 rounded text-xs" onclick="adminLoginAsStand(${s.id})">Entrar</button></td></tr>`;
-            }).join('')}
-          </table>
-        </div>`;
+        <div class="flex justify-between items-center mb-4"><h1 class="disp text-2xl font-extrabold">🔒 Panel Superadmin</h1><button class="btn2 text-xs py-1 px-3" onclick="adminLogged=false;localStorage.removeItem('fv_admin_logged');route();">Cerrar</button></div>
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+          <button class="${adminTab==='stands'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='stands'; route();">🏪 Stands & Ciclos</button>
+          <button class="${adminTab==='orders'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='orders'; route();">🧾 Registro de Ventas</button>
+          <button class="${adminTab==='liquidation'?'btn':'btn2'} text-xs sm:text-sm !py-2 shrink-0" onclick="adminTab='liquidation'; route();">💰 Cobros & Comisión (5%)</button>
+        </div>
+        ${content}`;
     }
 
     window.handleAdminLogin = e => {
@@ -602,7 +657,19 @@
 
     window.toggleStandActive = async id => {
       const s = DB.getStands().find(x => x.id === id);
-      if (s) { s.active = !s.active; await DB.saveStand(s); toast('Estado actualizado'); route(); }
+      if (s) { 
+        s.active = !s.active; 
+        if (s.active && !s.approvedAt) s.approvedAt = Date.now();
+        await DB.saveStand(s); 
+        toast('Estado actualizado'); 
+        route(); 
+      }
+    };
+
+    window.resetStandCycle = async id => {
+      if (!confirm('¿Reiniciar ciclo de 7 días para este stand?')) return;
+      const s = DB.getStands().find(x => x.id === id);
+      if (s) { s.approvedAt = Date.now(); await DB.saveStand(s); toast('Ciclo de 7 días reiniciado 🔄'); route(); }
     };
 
     let editingProdId = null;
