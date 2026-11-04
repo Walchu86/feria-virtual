@@ -33,7 +33,7 @@
   <!-- FIREBASE FIRESTORE INTEGRACIÓN ROBUSTA CON MODO OFFLINE Y ESCRITURAS ATÓMICAS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCQgmq6xVihzWN-f0LbzlzZrSecYeEnjs",
@@ -174,7 +174,7 @@
     const CLOUD_NAME = 'xr6zpe1k';
     const UPLOAD_PRESET = 'feria_preset';
 
-    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     const cleanPhoneNumber = (raw) => {
       let digits = (raw || '').replace(/\D/g, '');
       if (digits.startsWith('549') && digits.length > 10) digits = digits.slice(3);
@@ -508,10 +508,7 @@
       let standsHtml = Object.keys(byStand).map(id => {
         const st = byStand[id];
         const t = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = `Hola ${st.name}! Soy ${f.name}. Pedido #${orderId}:
-` + st.items.map(i => `• ${i.qty}x ${i.name}`).join('
-') + `
-Total: ${money(t)}`;
+        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":\n" + st.items.map(i => "• " + i.qty + "x " + i.name).join('\n') + "\nTotal: " + money(t);
         return `<div class="bg-slate-50 p-4 rounded-xl border space-y-2"><b>🏪 ${h(st.name)}</b><a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm block text-center">💬 Enviar WhatsApp</a></div>`;
       }).join('');
 
@@ -577,7 +574,6 @@ Total: ${money(t)}`;
     window.logout = () => { currentVendor = null; localStorage.removeItem('fv_session'); renderNav(); navigate('#/'); };
 
     let adminLogged = localStorage.getItem('fv_admin_logged') === 'true';
-    let adminTab = 'stands';
 
     function adminDashboardView() {
       if (!adminLogged) return `<form class="card max-w-md mx-auto space-y-4 shadow-xl mt-6" onsubmit="handleAdminLogin(event)"><h1 class="disp text-xl font-bold text-center">🔒 Superadministrador</h1><input class="inp text-sm" name="user" placeholder="Usuario" required><input class="inp text-sm" name="pass" type="password" placeholder="Contraseña" required><button class="btn">Ingresar</button></form>`;
@@ -609,7 +605,6 @@ Total: ${money(t)}`;
       if (s) { s.active = !s.active; await DB.saveStand(s); toast('Estado actualizado'); route(); }
     };
 
-    let vendorTab = 'products';
     let editingProdId = null;
 
     async function panelView() {
