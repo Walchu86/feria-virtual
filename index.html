@@ -632,6 +632,7 @@
                     <td class="space-x-1 whitespace-nowrap">
                       <button class="btn2 !py-1 !px-2 text-xs" onclick="toggleStandActive(${s.id})">${s.active?'Pausar':'Aprobar'}</button>
                       <button class="bg-amber-600 text-white font-bold !py-1 !px-2 rounded text-xs" onclick="adminLoginAsStand(${s.id})">Entrar</button>
+                      <button class="bg-red-600 text-white font-bold !py-1 !px-2 rounded text-xs" onclick="adminDeleteStand(${s.id}, '${h(s.name)}')">Borrar</button>
                     </td>
                   </tr>`;
               }).join('')}
@@ -721,6 +722,13 @@
       if (!confirm('¿Reiniciar ciclo de 7 días?')) return;
       const s = DB.getStands().find(x => x.id === id);
       if (s) { s.approvedAt = Date.now(); await DB.saveStand(s); toast('Ciclo reiniciado 🔄'); route(); }
+    };
+
+    window.adminDeleteStand = async (id, name) => {
+      if (!confirm(`¿Estás seguro de borrar completamente el stand "${name}"? Esta acción eliminará el stand de la base de datos.`)) return;
+      await DB.removeStand(id);
+      toast('Stand eliminado correctamente');
+      route();
     };
 
     let editingProdId = null;
