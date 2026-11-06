@@ -52,10 +52,16 @@
     let memoryOrders = JSON.parse(localStorage.getItem('fv_cache_orders') || '[]');
     let memoryReviews = JSON.parse(localStorage.getItem('fv_cache_reviews') || '[]');
 
+    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
     async function fetchCloudData() {
       try {
         const standsSnap = await getDocs(collection(db, 'stands'));
-        memoryStands = standsSnap.docs.map(d => d.data());
+        memoryStands = standsSnap.docs.map(d => {
+          let data = d.data();
+          if (!data.slug && data.name) data.slug = slugify(data.name);
+          return data;
+        });
         localStorage.setItem('fv_cache_stands', JSON.stringify(memoryStands));
 
         const prodsSnap = await getDocs(collection(db, 'products'));
@@ -80,6 +86,7 @@
     window.CloudDB = {
       getStands: () => memoryStands,
       saveStand: async (stand) => {
+        if (!stand.slug && stand.name) stand.slug = slugify(stand.name);
         const idx = memoryStands.findIndex(s => s.id === stand.id);
         if (idx >= 0) memoryStands[idx] = stand; else memoryStands.push(stand);
         localStorage.setItem('fv_cache_stands', JSON.stringify(memoryStands));
@@ -153,7 +160,7 @@
     </div>
   </div>
 
-  <!-- Modal Zoom & Ficha Completa con Compra -->
+  <!-- Modal Zoom & Ficha Completa -->
   <div id="zoomModal" class="fixed inset-0 z-50 bg-black/85 hidden flex items-center justify-center p-4" onclick="closeZoom()">
     <div class="bg-white rounded-3xl p-5 max-w-md w-full relative overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <button type="button" class="absolute top-3 right-3 bg-[#10263a] text-white rounded-full w-10 h-10 font-bold flex items-center justify-center text-lg shadow-lg z-20 hover:bg-[#ff5a36] transition-colors" onclick="closeZoom()">✕</button>
@@ -314,6 +321,11 @@
       if (specs?.gastronomy?.presentacion) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Presentación:</b> ${specs.gastronomy.presentacion}</p>`;
       if (specs?.measures) specsHtml += `<p class="text-xs text-slate-600 mt-1"><b>Medidas:</b> ${specs.measures}</p>`;
 
+      const standObj = DB.getStands().find(s => s.id === standId);
+      const standIdentifier = standObj?.slug || standId;
+      const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
+      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${name}* (${money(price)})\nStand: ${standName}\n👉 ${shareUrl}`);
+
       $('#zoomContent').innerHTML = `
         <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-48" onclick="this.classList.toggle('zoomed')">
           ${optImg ? `<img src="${h(optImg)}" loading="lazy" class="w-full h-full object-contain">` : '<span class="text-5xl">📦</span>'}
@@ -321,9 +333,12 @@
         <h3 class="disp text-lg font-bold">${h(name)}</h3>
         <p class="text-xs text-slate-600 mt-1">${h(desc || 'Sin descripción.')}</p>
         ${specsHtml}
-        <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
-          <span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(price)}</span>
-          <button class="btn text-xs !py-2.5 !w-auto px-5 ${isAgotado ? 'opacity-50 cursor-not-allowed' : ''}" ${isAgotado ? 'disabled' : ''} onclick="closeZoom(); addToCart(${productId}, ${standId}, '${h(standName)}', '${h(name)}', ${price})">${isAgotado ? 'Agotado' : 'Agregar al Carrito 🛒'}</button>
+        <div class="mt-4 pt-3 border-t border-slate-200 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="disp text-2xl font-extrabold text-[#ff5a36]">${money(price)}</span>
+            <button class="btn text-xs !py-2.5 !w-auto px-5 ${isAgotado ? 'opacity-50 cursor-not-allowed' : ''}" ${isAgotado ? 'disabled' : ''} onclick="closeZoom(); addToCart(${productId}, ${standId}, '${h(standName)}', '${h(name)}', ${price})">${isAgotado ? 'Agotado' : 'Agregar al Carrito 🛒'}</button>
+          </div>
+          <a href="https://api.whatsapp.com/send?text=${shareText}" target="_blank" class="btnwa text-xs !py-2 !w-full block text-center">💬 Compartir producto por WhatsApp</a>
         </div>`;
       $('#zoomModal').classList.remove('hidden');
     };
@@ -361,8 +376,10 @@
         </section>
         <h2 class="text-xl font-extrabold mb-4">Stands Activos (${stands.length})</h2>
         <div id="standsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          ${stands.map(s => `
-            <a class="stand-card" href="#/stand/${s.slug || s.id}">
+          ${stands.map(s => {
+            const standSlug = s.slug || slugify(s.name) || s.id;
+            return `
+            <a class="stand-card" href="#/stand/${standSlug}">
               <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border" style="border-color:${h(s.color || '#ff5a36')}">
                 ${s.logo ? `<img src="${h(optimizeCloudinaryUrl(s.logo))}" loading="lazy" class="w-full h-full object-cover">` : '<span class="text-2xl flex items-center justify-center h-full">⛺</span>'}
               </div>
@@ -371,7 +388,8 @@
                 <b class="disp text-base block truncate">${h(s.name)}</b>
                 <p class="text-xs text-slate-500 truncate">${h(s.description || '')}</p>
               </div>
-            </a>`).join('')}
+            </a>`;
+          }).join('')}
         </div>`;
     }
 
@@ -380,8 +398,10 @@
       const grid = $('#standsGrid');
       if (!grid) return;
       const stands = DB.getStands().filter(s => s.active && (s.name.toLowerCase().includes(q) || s.rubro.toLowerCase().includes(q)));
-      grid.innerHTML = stands.map(s => `
-        <a class="stand-card" href="#/stand/${s.slug || s.id}">
+      grid.innerHTML = stands.map(s => {
+        const standSlug = s.slug || slugify(s.name) || s.id;
+        return `
+        <a class="stand-card" href="#/stand/${standSlug}">
           <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border">
             ${s.logo ? `<img src="${h(optimizeCloudinaryUrl(s.logo))}" loading="lazy" class="w-full h-full object-cover">` : '⛺'}
           </div>
@@ -390,16 +410,19 @@
             <b class="disp text-base block truncate">${h(s.name)}</b>
             <p class="text-xs text-slate-500 truncate">${h(s.description || '')}</p>
           </div>
-        </a>`).join('');
+        </a>`;
+      }).join('');
     };
 
     async function standView(id) {
-      const stand = DB.getStands().find(s => String(s.id) === String(id) || s.slug === id);
+      const stand = DB.getStands().find(s => String(s.id) === String(id) || s.slug === id || slugify(s.name) === id);
       if (!stand || !stand.active) return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Stand no disponible</h2><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver</button></div>`;
       
       const products = DB.getProducts().filter(p => String(p.stand_id) === String(stand.id) && p.active);
       const reviews = DB.getReviews().filter(r => String(r.stand_id) === String(stand.id));
       const avgRating = reviews.length ? (reviews.reduce((a,b)=>a+b.rating,0)/reviews.length).toFixed(1) : 'Nuevo';
+
+      const standIdentifier = stand.slug || stand.id;
 
       return `
         <div class="rounded-3xl p-5 mb-6 text-white shadow-lg flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left" style="background:${h(stand.color || '#ff5a36')}">
@@ -419,6 +442,10 @@
             const finalP = finalPrice(p);
             const isAgotado = p.agotado || false;
             const specsJson = encodeURIComponent(JSON.stringify(p.specs || {}));
+            
+            const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
+            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${p.name}* (${money(finalP)})\nStand: ${stand.name}\n👉 ${shareUrl}`);
+
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md relative">
                 ${isAgotado ? '<div class="absolute inset-0 bg-white/80 z-10 flex items-center justify-center"><span class="bg-red-600 text-white font-bold px-3 py-1 rounded-full text-xs">AGOTADO</span></div>' : ''}
@@ -432,9 +459,10 @@
                   ${p.specs?.calzados ? `<p class="text-[11px] text-slate-600 mb-1"><b>Calce:</b> ${p.specs.calzados.join(', ')}</p>` : ''}
                   ${p.specs?.liquidosMl ? `<p class="text-[11px] text-slate-600 mb-1"><b>Volumen:</b> ${p.specs.liquidosMl}</p>` : ''}
                   ${p.specs?.gastronomy?.presentacion ? `<p class="text-[11px] text-slate-600 mb-1"><b>Presentación:</b> ${p.specs.gastronomy.presentacion}</p>` : ''}
-                  <div class="mt-auto pt-2">
+                  <div class="mt-auto pt-2 flex flex-col gap-1.5">
                     <b class="disp text-lg text-[#ff5a36]">${money(finalP)}</b>
-                    <button class="btn w-full text-xs mt-1 !py-2 ${isAgotado ? 'opacity-50 cursor-not-allowed' : ''}" ${isAgotado ? 'disabled' : ''} onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
+                    <button class="btn w-full text-xs !py-2 ${isAgotado ? 'opacity-50 cursor-not-allowed' : ''}" ${isAgotado ? 'disabled' : ''} onclick="addToCart(${p.id}, ${stand.id}, '${h(stand.name)}', '${h(p.name)}', ${finalP})">Agregar</button>
+                    <a href="https://api.whatsapp.com/send?text=${shareText}" target="_blank" class="btnwa text-[10px] !py-1.5 !px-2 w-full block text-center">💬 Compartir WhatsApp</a>
                   </div>
                 </div>
               </div>`;
@@ -582,7 +610,8 @@
           const logoInput = $('#logoFile');
           let logoUrl = logoInput?.files[0] ? await uploadToCloudinary(logoInput.files[0]) : '';
           const finalRubro = f.rubroSelect === 'Otro' ? (f.customRubro || 'General') : f.rubroSelect;
-          const newStand = { id: Date.now(), name: f.name, rubro: finalRubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now(), approvedAt: Date.now() };
+          const standSlug = slugify(f.name);
+          const newStand = { id: Date.now(), name: f.name, slug: standSlug, rubro: finalRubro, phone: cleanPhoneNumber(f.phone), description: f.description, email: f.email, password: f.password, color: '#ff5a36', active: false, logo: logoUrl, created: Date.now(), approvedAt: Date.now() };
           await DB.saveStand(newStand);
           window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hola Walchu! Registré mi stand ' + f.name)}`, '_blank');
           app.innerHTML = `<div class="card max-w-lg mx-auto text-center py-10"><h1 class="text-2xl font-bold">¡Stand Creado!</h1><p class="text-sm my-2">Pendiente de aprobación.</p><button class="btn max-w-xs mx-auto" onclick="navigate('#/')">Volver</button></div>`;
