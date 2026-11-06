@@ -1018,13 +1018,14 @@
       const stand = stands.find(s => s.token === token);
 
       if (!stand) {
-        return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Enlace vencido o inexistente</h2><p class="text-sm text-slate-600 mt-2">Este stand ya fue activado o el enlace no es correcto.</p><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+        return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Enlace vencido o ya utilizado</h2><p class="text-sm text-slate-600 mt-2">Este stand ya fue activado anteriormente o el enlace no es válido.</p><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       }
 
-      // Activar el stand automáticamente
+      // Activar el stand automáticamente en Firebase y refrescar base de datos local
       stand.active = true;
-      delete stand.token; // Limpiar token para un solo uso
+      delete stand.token; // Limpiar token para seguridad
       await DB.saveStand(stand);
+      if (typeof DB.refresh === 'function') await DB.refresh();
 
       return `
         <div class="card max-w-lg mx-auto text-center py-10 space-y-4 shadow-xl">
@@ -1037,17 +1038,19 @@
 
     window.route = async () => {
       const hash = location.hash || '#/';
-      const [path, arg] = hash.replace(/^#\/?/, '').split('/');
+      const cleanHash = hash.replace(/^#\/?/, '');
+      const [path, routeArg] = cleanHash.split('/');
       renderNav();
       try {
         if (!path) app.innerHTML = await homeView();
-        else if (path === 'stand') app.innerHTML = await standView(arg);
+        else if (path === 'stand') app.innerHTML = await standView(routeArg);
         else if (path === 'checkout') app.innerHTML = checkoutView();
         else if (path === 'ingresar' || path === 'registro') app.innerHTML = authView(path === 'registro');
         else if (path === 'panel') app.innerHTML = await panelView();
         else if (path === 'admin') app.innerHTML = adminDashboardView();
-        else if (path === 'verificar') {
-          const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+        else if (path === 'verificar' || cleanHash.startsWith('verificar')) {
+          const queryString = hash.includes('?') ? hash.split('?')[1] : '';
+          const urlParams = new URLSearchParams(queryString);
           const token = urlParams.get('token');
           app.innerHTML = await verificarView(token);
         }
