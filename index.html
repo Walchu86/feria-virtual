@@ -1010,7 +1010,7 @@
       route();
     };
 
-    // Vista de verificación por correo (cuando el feriante hace clic en el enlace del mail)
+    // Vista de verificación por correo con manejo elegante para doble clic o reloads
     async function verificarView(token) {
       if (!token) return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Token inválido</h2><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       
@@ -1018,7 +1018,13 @@
       const stand = stands.find(s => s.token === token);
 
       if (!stand) {
-        return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Enlace vencido o ya utilizado</h2><p class="text-sm text-slate-600 mt-2">Este stand ya fue activado anteriormente o el enlace no es válido.</p><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
+        return `
+          <div class="card max-w-lg mx-auto text-center py-10 space-y-4 shadow-xl">
+            <div class="text-6xl">✨</div>
+            <h1 class="disp text-2xl font-extrabold">¡Tu cuenta ya está activa!</h1>
+            <p class="text-sm text-slate-600">Este enlace ya fue procesado con éxito anteriormente o tu stand ya se encuentra online.</p>
+            <button class="btn max-w-xs mx-auto" onclick="navigate('#/ingresar')">Iniciar Sesión</button>
+          </div>`;
       }
 
       // Activar el stand automáticamente en Firebase y refrescar base de datos local
