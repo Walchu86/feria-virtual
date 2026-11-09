@@ -33,6 +33,17 @@
     .product-box:hover img { transform: scale(1.03); }
     @keyframes pulse-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
     .skeleton { animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; background-color: #cbd5e1; border-radius: 12px; }
+
+    /* ANIMACIÓN Y ESTILO EXCLUSIVO PARA LA PLACA BLACK NOVEMBER */
+    @keyframes blackNovemberGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 90, 54, 0.3); transform: scale(1); }
+      50% { box-shadow: 0 0 25px rgba(255, 90, 54, 0.6); transform: scale(1.01); }
+    }
+    .black-november-banner {
+      background: linear-gradient(135deg, #0b131d 0%, #1a2938 50%, #2e110b 100%);
+      border: 2px solid #ff5a36;
+      animation: blackNovemberGlow 4s ease-in-out infinite;
+    }
   </style>
 
   <!-- FIREBASE FIRESTORE INTEGRACIÓN ROBUSTA CON MODO OFFLINE Y ESCRITURAS ATÓMICAS -->
@@ -372,11 +383,14 @@ Stand: ${standName}
     async function homeView() {
       let stands = DB.getStands().filter(s => s.active).sort(() => Math.random() - 0.5);
       return `
-        <section class="rounded-3xl bg-gradient-to-r from-amber-500 to-[#ff5a36] text-white p-5 mb-6 shadow-xl text-center">
-          <div class="text-3xl mb-1">🚀 ¡LANZAMIENTO OFICIAL! 🚀</div>
-          <h2 class="disp text-xl sm:text-2xl font-extrabold">¡Crear tu Stand en la Feria es 100% GRATIS!</h2>
-          <button class="mt-3 bg-white text-[#10263a] font-bold px-5 py-2 rounded-xl text-sm shadow" onclick="navigate('#/registro')">Crear Stand Gratis</button>
+        <!-- PLACA BLACK NOVEMBER CON ANIMACIÓN SUTIL -->
+        <section class="rounded-3xl black-november-banner text-white p-6 mb-6 shadow-xl text-center relative overflow-hidden">
+          <div class="text-xs uppercase font-extrabold tracking-widest text-[#ff5a36] bg-black/40 inline-block px-3 py-1 rounded-full mb-2 border border-[#ff5a36]/30">BLACK NOVEMBER 🖤🔥</div>
+          <h2 class="disp text-xl sm:text-2xl font-extrabold tracking-tight">¡Tu stand propio 100% GRATIS todo el mes!</h2>
+          <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-md mx-auto">Publicá tus productos y empezá a vender directo por WhatsApp. ¡Aprovechá la temporada alta de ventas!</p>
+          <button class="mt-4 bg-[#ff5a36] hover:bg-[#e84823] text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-lg transition-all transform hover:scale-105" onclick="navigate('#/registro')">Crear Stand Gratis 🚀</button>
         </section>
+
         <section class="rounded-3xl bg-[#10263a] text-white p-6 mb-6 shadow-xl">
           <h1 class="text-3xl font-extrabold">Feria Virtual 🎪</h1>
           <p class="mt-2 text-sm text-slate-300">Apoyá a los emprendedores locales. Elegí un stand y coordiná tu compra por WhatsApp.</p>
@@ -958,7 +972,6 @@ Stand: ${stand.name}
         </div>`;
     }
 
-    // FUNCIÓN PARA ACTUALIZAR LOS DATOS Y DESCRIPCIÓN DEL STAND DEL FERIANTE
     window.updateStandProfile = async e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
@@ -1101,7 +1114,6 @@ Stand: ${stand.name}
       route();
     };
 
-    // Vista de verificación por correo con manejo elegante para doble clic o reloads
     async function verificarView(token) {
       if (!token) return `<div class="card text-center py-10"><h2 class="text-xl font-bold">Token inválido</h2><button class="btn mt-4 max-w-xs mx-auto" onclick="navigate('#/')">Volver al inicio</button></div>`;
       
@@ -1118,9 +1130,8 @@ Stand: ${stand.name}
           </div>`;
       }
 
-      // Activar el stand automáticamente en Firebase y refrescar base de datos local
       stand.active = true;
-      delete stand.token; // Limpiar token para seguridad
+      delete stand.token; 
       await DB.saveStand(stand);
       if (typeof DB.refresh === 'function') await DB.refresh();
 
