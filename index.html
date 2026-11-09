@@ -329,7 +329,10 @@
       const standObj = DB.getStands().find(s => s.id === standId);
       const standIdentifier = standObj?.slug || standId;
       const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${name}* (${money(price)})\nStand: ${standName}\n👉 ${shareUrl}`);
+      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
+*${name}* (${money(price)})
+Stand: ${standName}
+👉 ${shareUrl}`);
 
       $('#zoomContent').innerHTML = `
         <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-48" onclick="this.classList.toggle('zoomed')">
@@ -449,7 +452,10 @@
             const specsJson = encodeURIComponent(JSON.stringify(p.specs || {}));
             
             const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${p.name}* (${money(finalP)})\nStand: ${stand.name}\n👉 ${shareUrl}`);
+            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
+*${p.name}* (${money(finalP)})
+Stand: ${stand.name}
+👉 ${shareUrl}`);
 
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md relative">
@@ -555,7 +561,10 @@
       let standsHtml = Object.keys(byStand).map(id => {
         const st = byStand[id];
         const t = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":\n" + st.items.map(i => "• " + i.qty + "x " + i.name).join('\n') + "\nTotal: " + money(t);
+        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":
+" + st.items.map(i => "• " + i.qty + "x " + i.name).join('
+') + "
+Total: " + money(t);
         return `<div class="bg-slate-50 p-4 rounded-xl border space-y-2"><b>🏪 ${h(st.name)}</b><a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm block text-center">💬 Enviar WhatsApp</a></div>`;
       }).join('');
 
@@ -773,16 +782,19 @@
           const commission = standTotalSales * 0.05;
           const approvedTime = s.approvedAt || s.created || Date.now();
           const daysElapsed = Math.floor((Date.now() - approvedTime) / (1000 * 60 * 60 * 24));
-          const cycleEnded = daysElapsed >= 7 || !hasSales;
+          const daysLeft = Math.max(0, 7 - daysElapsed);
+          const cycleEnded = daysElapsed >= 7;
 
           let waMsg = '';
-          if (!hasSales) {
+          if (!hasSales && cycleEnded) {
             waMsg = `¡Hola, ${s.name}! 🤝 Pasaron tus primeros 7 días en Feria Virtual y queríamos escribirte para darte fuerzas. ¡No bajes los brazos! Tu espacio se renueva automáticamente por 7 días más gratis. Seguí subiendo fotos de tus productos y sumate en nuestro Instagram para tener más visibilidad: https://www.instagram.com/feriavirtual.shop/ 🚀📲 ¡Estamos para crecer juntos!`;
-          } else {
+          } else if (hasSales) {
             waMsg = `¡Hola, ${s.name}! 📊 ¡Buenas noticias! Tu ciclo de 7 días en Feria Virtual cerró con ventas registradas por ${money(standTotalSales)}. El resumen de tu liquidación está disponible en tu panel. Para realizar la transferencia de la comisión (5%, equivalente a ${money(commission)}), podés hacerlo a través de Personal Pay a nombre de Walter Emanuel Canteros. (Recordá enviarnos el comprobante por acá). ¡Felicitaciones! Seguí subiendo más productos y etiquetanos en nuestro Instagram: https://www.instagram.com/feriavirtual.shop/ 🛍️✨`;
+          } else {
+            waMsg = `¡Hola, ${s.name}! 🌟 ¡Hola de nuevo! Te escribimos de Feria Virtual para recordarte que tu stand sigue activo. Tenés ${daysLeft} días restantes en tu ciclo actual. ¡Seguí subiendo fotos de tus productos y visitanos en https://www.instagram.com/feriavirtual.shop/ para potenciar tus ventas! 🚀`;
           }
 
-          return { name: s.name, phone: s.phone, sales: standTotalSales, commission, hasSales, waMsg };
+          return { name: s.name, phone: s.phone, sales: standTotalSales, commission, hasSales, daysLeft, cycleEnded, waMsg };
         });
 
         content = `
@@ -794,7 +806,12 @@
                   <div>
                     <b class="text-base block">${h(sl.name)}</b>
                     <span class="text-xs text-slate-500">Ventas totales: ${money(sl.sales)}</span>
-                    <span class="block text-[11px] ${sl.hasSales ? 'text-green-600 font-bold' : 'text-amber-600 font-bold'}">${sl.hasSales ? '🟢 Vendió en el ciclo' : '🟡 Sin ventas (Ciclo renovado 7 días)'}</span>
+                    <span class="block text-[11px] font-bold ${sl.cycleEnded && !sl.hasSales ? 'text-red-600' : 'text-amber-600'}">
+                      ⏳ Ciclo 7 días: ${sl.cycleEnded ? '¡Ciclo cumplido! (Listo para mensaje de aliento)' : `${sl.daysLeft} días restantes`}
+                    </span>
+                    <span class="block text-[11px] ${sl.hasSales ? 'text-green-600 font-bold' : 'text-slate-500'}">
+                      ${sl.hasSales ? '🟢 Registró ventas en el ciclo' : '⚪ Sin ventas registradas'}
+                    </span>
                   </div>
                   <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                     <div class="text-right">
@@ -1013,7 +1030,7 @@
         route();
       } catch(err) {
         toast('Error al guardar o subir foto. Intentá de nuevo.');
-        btn.disabled = false; btn.textContent = editingProdId ? 'Guardar Cambios' : 'Publicار Producto';
+        btn.disabled = false; btn.textContent = editingProdId ? 'Guardar Cambios' : 'Publicar Producto';
       }
     };
 
@@ -1041,8 +1058,9 @@
           </div>`;
       }
 
+      // Activar el stand automáticamente en Firebase y refrescar base de datos local
       stand.active = true;
-      delete stand.token;
+      delete stand.token; // Limpiar token para seguridad
       await DB.saveStand(stand);
       if (typeof DB.refresh === 'function') await DB.refresh();
 
