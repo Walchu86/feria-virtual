@@ -57,7 +57,7 @@
     let memoryOrders = JSON.parse(localStorage.getItem('fv_cache_orders') || '[]');
     let memoryReviews = JSON.parse(localStorage.getItem('fv_cache_reviews') || '[]');
 
-    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
     async function fetchCloudData() {
       try {
@@ -186,7 +186,7 @@
     const CLOUD_NAME = 'xr6zpe1k';
     const UPLOAD_PRESET = 'feria_preset';
 
-    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const slugify = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     const cleanPhoneNumber = (raw) => {
       let digits = (raw || '').replace(/\D/g, '');
       if (digits.startsWith('549') && digits.length > 10) digits = digits.slice(3);
@@ -329,7 +329,10 @@
       const standObj = DB.getStands().find(s => s.id === standId);
       const standIdentifier = standObj?.slug || standId;
       const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${name}* (${money(price)})\nStand: ${standName}\n👉 ${shareUrl}`);
+      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
+*${name}* (${money(price)})
+Stand: ${standName}
+👉 ${shareUrl}`);
 
       $('#zoomContent').innerHTML = `
         <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-48" onclick="this.classList.toggle('zoomed')">
@@ -449,7 +452,10 @@
             const specsJson = encodeURIComponent(JSON.stringify(p.specs || {}));
             
             const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${p.name}* (${money(finalP)})\nStand: ${stand.name}\n👉 ${shareUrl}`);
+            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
+*${p.name}* (${money(finalP)})
+Stand: ${stand.name}
+👉 ${shareUrl}`);
 
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md relative">
@@ -555,7 +561,10 @@
       let standsHtml = Object.keys(byStand).map(id => {
         const st = byStand[id];
         const t = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":\n" + st.items.map(i => "• " + i.qty + "x " + i.name).join('\n') + "\nTotal: " + money(t);
+        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":
+" + st.items.map(i => "• " + i.qty + "x " + i.name).join('
+') + "
+Total: " + money(t);
         return `<div class="bg-slate-50 p-4 rounded-xl border space-y-2"><b>🏪 ${h(st.name)}</b><a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm block text-center">💬 Enviar WhatsApp</a></div>`;
       }).join('');
 
@@ -761,15 +770,28 @@
       } else if (adminTab === 'liquidation') {
         const standLiquidations = stands.map(s => {
           let standTotalSales = 0;
+          let hasSales = false;
           orders.forEach(o => {
             (o.cart || []).forEach(item => {
               if (String(item.standId) === String(s.id)) {
                 standTotalSales += (item.price * item.qty);
+                hasSales = true;
               }
             });
           });
           const commission = standTotalSales * 0.05;
-          return { name: s.name, phone: s.phone, sales: standTotalSales, commission };
+          const approvedTime = s.approvedAt || s.created || Date.now();
+          const daysElapsed = Math.floor((Date.now() - approvedTime) / (1000 * 60 * 60 * 24));
+          const cycleEnded = daysElapsed >= 7 || !hasSales; // o regla estricta de ciclo
+
+          let waMsg = '';
+          if (!hasSales) {
+            waMsg = `¡Hola, ${s.name}! 🤝 Pasaron tus primeros 7 días en Feria Virtual y queríamos escribirte para darte fuerzas. ¡No bajes los brazos! Tu espacio se renueva automáticamente por 7 días más gratis. Seguí subiendo fotos de tus productos y sumate en nuestro Instagram para tener más visibilidad: https://www.instagram.com/feriavirtual.shop/ 🚀📲 ¡Estamos para crecer juntos!`;
+          } else {
+            waMsg = `¡Hola, ${s.name}! 📊 ¡Buenas noticias! Tu ciclo de 7 días en Feria Virtual cerró con ventas registradas por ${money(standTotalSales)}. El resumen de tu liquidación está disponible en tu panel. Para realizar la transferencia de la comisión (5%, equivalente a ${money(commission)}), podés hacerlo a través de Personal Pay a nombre de Walter Emanuel Canteros. (Recordá enviarnos el comprobante por acá). ¡Felicitaciones! Seguí subiendo más productos y etiquetanos en nuestro Instagram: https://www.instagram.com/feriavirtual.shop/ 🛍️✨`;
+          }
+
+          return { name: s.name, phone: s.phone, sales: standTotalSales, commission, hasSales, waMsg };
         });
 
         content = `
@@ -777,17 +799,18 @@
             <h3 class="disp text-lg font-bold">💰 Cobros y Comisión por Feriante (5%)</h3>
             <div class="space-y-3">
               ${standLiquidations.map(sl => `
-                <div class="bg-slate-50 p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div class="bg-slate-50 p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <b class="text-base block">${h(sl.name)}</b>
                     <span class="text-xs text-slate-500">Ventas totales: ${money(sl.sales)}</span>
+                    <span class="block text-[11px] ${sl.hasSales ? 'text-green-600 font-bold' : 'text-amber-600 font-bold'}">${sl.hasSales ? '🟢 Vendió en el ciclo' : '🟡 Sin ventas (Ciclo renovado 7 días)'}</span>
                   </div>
                   <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                     <div class="text-right">
                       <span class="text-[10px] uppercase font-bold text-slate-400 block">Comisión (5%)</span>
                       <span class="disp text-lg font-extrabold text-[#ff5a36]">${money(sl.commission)}</span>
                     </div>
-                    ${sl.phone ? `<a href="https://wa.me/${sl.phone}?text=${encodeURIComponent('Hola ' + sl.name + '! Te escribo de la Feria Virtual para coordinar el cobro de tu comisión semanal de ' + money(sl.commission))}" target="_blank" class="btnwa text-xs !py-1.5 !px-3 shrink-0">💬 WhatsApp</a>` : ''}
+                    ${sl.phone ? `<a href="https://wa.me/${sl.phone}?text=${encodeURIComponent(sl.waMsg)}" target="_blank" class="btnwa text-xs !py-2 !px-3 shrink-0">💬 Enviar WhatsApp</a>` : ''}
                   </div>
                 </div>`).join('')}
             </div>
