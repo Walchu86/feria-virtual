@@ -561,10 +561,7 @@ Stand: ${stand.name}
       let standsHtml = Object.keys(byStand).map(id => {
         const st = byStand[id];
         const t = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":
-" + st.items.map(i => "• " + i.qty + "x " + i.name).join('
-') + "
-Total: " + money(t);
+        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":\n" + st.items.map(i => "• " + i.qty + "x " + i.name).join("\n") + "\nTotal: " + money(t);
         return `<div class="bg-slate-50 p-4 rounded-xl border space-y-2"><b>🏪 ${h(st.name)}</b><a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm block text-center">💬 Enviar WhatsApp</a></div>`;
       }).join('');
 
