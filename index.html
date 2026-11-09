@@ -329,10 +329,7 @@
       const standObj = DB.getStands().find(s => s.id === standId);
       const standIdentifier = standObj?.slug || standId;
       const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
-*${name}* (${money(price)})
-Stand: ${standName}
-👉 ${shareUrl}`);
+      const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${name}* (${money(price)})\nStand: ${standName}\n👉 ${shareUrl}`);
 
       $('#zoomContent').innerHTML = `
         <div class="zoom-container mb-3 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden h-48" onclick="this.classList.toggle('zoomed')">
@@ -452,10 +449,7 @@ Stand: ${standName}
             const specsJson = encodeURIComponent(JSON.stringify(p.specs || {}));
             
             const shareUrl = `${window.location.origin}/#/stand/${standIdentifier}`;
-            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪
-*${p.name}* (${money(finalP)})
-Stand: ${stand.name}
-👉 ${shareUrl}`);
+            const shareText = encodeURIComponent(`¡Mirá este producto en Feria Virtual! 🎪\n*${p.name}* (${money(finalP)})\nStand: ${stand.name}\n👉 ${shareUrl}`);
 
             return `
               <div class="card !p-0 overflow-hidden flex flex-col justify-between shadow-md relative">
@@ -561,10 +555,7 @@ Stand: ${stand.name}
       let standsHtml = Object.keys(byStand).map(id => {
         const st = byStand[id];
         const t = st.items.reduce((a, b) => a + (b.price * b.qty), 0);
-        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":
-" + st.items.map(i => "• " + i.qty + "x " + i.name).join('
-') + "
-Total: " + money(t);
+        const txt = "Hola " + st.name + "! Soy " + f.name + ". Pedido #" + orderId + ":\n" + st.items.map(i => "• " + i.qty + "x " + i.name).join('\n') + "\nTotal: " + money(t);
         return `<div class="bg-slate-50 p-4 rounded-xl border space-y-2"><b>🏪 ${h(st.name)}</b><a href="https://wa.me/${st.phone}?text=${encodeURIComponent(txt)}" target="_blank" class="btnwa text-sm block text-center">💬 Enviar WhatsApp</a></div>`;
       }).join('');
 
@@ -782,7 +773,7 @@ Total: " + money(t);
           const commission = standTotalSales * 0.05;
           const approvedTime = s.approvedAt || s.created || Date.now();
           const daysElapsed = Math.floor((Date.now() - approvedTime) / (1000 * 60 * 60 * 24));
-          const cycleEnded = daysElapsed >= 7 || !hasSales; // o regla estricta de ciclo
+          const cycleEnded = daysElapsed >= 7 || !hasSales;
 
           let waMsg = '';
           if (!hasSales) {
@@ -1022,7 +1013,7 @@ Total: " + money(t);
         route();
       } catch(err) {
         toast('Error al guardar o subir foto. Intentá de nuevo.');
-        btn.disabled = false; btn.textContent = editingProdId ? 'Guardar Cambios' : 'Publicar Producto';
+        btn.disabled = false; btn.textContent = editingProdId ? 'Guardar Cambios' : 'Publicار Producto';
       }
     };
 
@@ -1050,9 +1041,8 @@ Total: " + money(t);
           </div>`;
       }
 
-      // Activar el stand automáticamente en Firebase y refrescar base de datos local
       stand.active = true;
-      delete stand.token; // Limpiar token para seguridad
+      delete stand.token;
       await DB.saveStand(stand);
       if (typeof DB.refresh === 'function') await DB.refresh();
 
