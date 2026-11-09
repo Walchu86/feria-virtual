@@ -34,7 +34,7 @@
     @keyframes pulse-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
     .skeleton { animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; background-color: #cbd5e1; border-radius: 12px; }
 
-    /* ANIMACIÓN Y ESTILO EXCLUSIVO PARA LA PLACA BLACK NOVEMBER */
+    /* ANIMACIÓN Y ESTILO EXCLUSIVO PARA LA PLACA BLACK NOVIEMBRE */
     @keyframes blackNovemberGlow {
       0%, 100% { box-shadow: 0 0 15px rgba(255, 90, 54, 0.3); transform: scale(1); }
       50% { box-shadow: 0 0 25px rgba(255, 90, 54, 0.6); transform: scale(1.01); }
@@ -383,12 +383,12 @@ Stand: ${standName}
     async function homeView() {
       let stands = DB.getStands().filter(s => s.active).sort(() => Math.random() - 0.5);
       return `
-        <!-- PLACA BLACK NOVEMBER CON ANIMACIÓN SUTIL -->
+        <!-- PLACA BLACK NOVIEMBRE CON ANIMACIÓN SUTIL Y BOTÓN DESTACADO -->
         <section class="rounded-3xl black-november-banner text-white p-6 mb-6 shadow-xl text-center relative overflow-hidden">
-          <div class="text-xs uppercase font-extrabold tracking-widest text-[#ff5a36] bg-black/40 inline-block px-3 py-1 rounded-full mb-2 border border-[#ff5a36]/30">BLACK NOVEMBER 🖤🔥</div>
+          <div class="text-xs uppercase font-extrabold tracking-widest text-[#ff5a36] bg-black/40 inline-block px-3.5 py-1 rounded-full mb-2 border border-[#ff5a36]/30">BLACK NOVIEMBRE 🖤</div>
           <h2 class="disp text-xl sm:text-2xl font-extrabold tracking-tight">¡Tu stand propio 100% GRATIS todo el mes!</h2>
           <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-md mx-auto">Publicá tus productos y empezá a vender directo por WhatsApp. ¡Aprovechá la temporada alta de ventas!</p>
-          <button class="mt-4 bg-[#ff5a36] hover:bg-[#e84823] text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-lg transition-all transform hover:scale-105" onclick="navigate('#/registro')">Crear Stand Gratis 🚀</button>
+          <button class="mt-5 bg-[#ff5a36] hover:bg-[#e84823] text-white font-extrabold px-8 py-3.5 rounded-2xl text-base shadow-lg transition-all transform hover:scale-105 inline-block" onclick="navigate('#/registro')">Crear Stand Gratis 🚀</button>
         </section>
 
         <section class="rounded-3xl bg-[#10263a] text-white p-6 mb-6 shadow-xl">
