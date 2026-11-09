@@ -174,7 +174,7 @@
   </div>
 
   <footer class="bg-[#10263a] text-white py-6 text-center text-xs sm:text-sm mt-12 px-4">
-    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026</p>
+    <p>🎪 <b>Feria Virtual</b> · feriavirtual.shop © 2026[cite: 1]</p>
     <p class="text-slate-400 mt-1">Conectando emprendedores y compradores locales.</p>
     <a href="https://wa.me/5493794655867?text=Hola%20Walchu,%20necesito%20soporte%20con%20la%20Feria%20Virtual" target="_blank" class="inline-block mt-3 bg-white/10 px-3 py-1.5 rounded-full hover:bg-white/20">💬 Soporte Técnico con Walchu</a>
   </footer>
@@ -877,7 +877,34 @@ Stand: ${stand.name}
       const selectedCatVal = isCustomCat ? 'Otro' : (editingP.category || '');
 
       return `
-        <div class="flex justify-between items-center mb-6"><h1 class="disp text-2xl font-extrabold">⛺ ${h(stand.name)}</h1></div>
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="disp text-2xl font-extrabold">⛺ ${h(stand.name)}</h1>
+        </div>
+
+        <!-- SECCIÓN DE CONFIGURACIÓN DEL STAND (MODIFICAR DESCRIPCIÓN Y DATOS) -->
+        <div class="card mb-6 text-left border-2 border-amber-200 bg-amber-50/40">
+          <h3 class="disp text-lg font-bold mb-3">⚙️ Configuración y Descripción de tu Stand</h3>
+          <form onsubmit="updateStandProfile(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold mb-1">Nombre del Emprendimiento</label>
+              <input class="inp text-sm bg-white" name="standName" value="${h(stand.name || '')}" required>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Descripción del Stand (¡Contanos qué vendés y tus redes o zona!)</label>
+              <textarea class="inp text-sm bg-white" name="standDesc" rows="3" placeholder="Ej: Especialistas en repostería artesanal y budines caseros. Envíos en Corrientes Capital...">${h(stand.description || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">WhatsApp de contacto</label>
+              <input class="inp text-sm bg-white" name="standPhone" type="tel" value="${h(stand.phone || '')}" required>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Actualizar Logo del Stand (opcional)</label>
+              <input type="file" id="standLogoFile" accept="image/*" class="inp text-xs bg-white">
+            </div>
+            <button class="btn2 text-sm !bg-[#10263a] py-2.5" id="saveStandBtn">Guardar Cambios del Stand</button>
+          </form>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <form class="card space-y-3 md:col-span-1 h-fit text-left" onsubmit="saveVendorProduct(event)">
             <h3 class="disp text-lg font-bold">${editingP.id ? '✏️ Editar Producto' : '➕ Nuevo Producto'}</h3>
@@ -930,6 +957,42 @@ Stand: ${stand.name}
           </div>
         </div>`;
     }
+
+    // FUNCIÓN PARA ACTUALIZAR LOS DATOS Y DESCRIPCIÓN DEL STAND DEL FERIANTE
+    window.updateStandProfile = async e => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const btn = $('#saveStandBtn');
+      btn.disabled = true; btn.textContent = 'Actualizando stand...';
+
+      try {
+        const stand = DB.getStands().find(s => s.id === currentVendor.id);
+        if (!stand) throw new Error('Stand no encontrado');
+
+        const logoInput = $('#standLogoFile');
+        let logoUrl = stand.logo || '';
+        if (logoInput && logoInput.files[0]) {
+          logoUrl = await uploadToCloudinary(logoInput.files[0]);
+        }
+
+        stand.name = f.standName;
+        stand.slug = slugify(f.standName);
+        stand.description = f.standDesc;
+        stand.phone = cleanPhoneNumber(f.standPhone);
+        stand.logo = logoUrl;
+
+        await DB.saveStand(stand);
+        currentVendor = stand;
+        localStorage.setItem('fv_session', JSON.stringify(stand));
+
+        toast('¡Descripción y datos del stand actualizados con éxito! ✨');
+        route();
+      } catch(err) {
+        console.error(err);
+        toast('Error al actualizar el stand');
+        btn.disabled = false; btn.textContent = 'Guardar Cambios del Stand';
+      }
+    };
 
     window.previewPrice = val => {
       const p = parsePrice(val);
